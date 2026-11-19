@@ -44,10 +44,10 @@ export default function DownloadPage() {
 
           <div className="download-quick-actions">
             <a
-              href="https://github.com/BAIANO-01/dorama-api/releases/download/apk-latest/app-debug.apk"
+              href="/downloads/igaradrama.apk"
               className="cta-huge-red"
               style={{ textDecoration: 'none' }}
-              download
+              download="IgaraDrama.apk"
             >
               <Download size={18} />
               <span>Baixar APK Direto (.apk)</span>
