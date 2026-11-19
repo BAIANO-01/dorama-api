@@ -6,16 +6,16 @@ import {
 import Section from '../components/Section';
 import { HeroSkeleton, CardSkeleton } from '../components/Skeletons';
 
-// Curated high-impact streaming categories
+// Curated high-impact streaming categories from DramaSDK
 const STREAMING_CATEGORIES = [
-  { id: 'Todos', label: '🔥 Todos os Títulos', queryKey: 'Todos' },
-  { id: 'Casa nobre', label: '👑 Casa Nobre & Bilionários', queryKey: 'Casa nobre' },
-  { id: 'Lobisomem', label: '🐺 Lobisomem & Fantasia', queryKey: 'Lobisomem' },
-  { id: 'Chefe', label: '💼 Romance & Chefes', queryKey: 'Chefe' },
-  { id: 'Vingança', label: '⚡ Vingança & Revidar', queryKey: 'Vingança' },
-  { id: 'Drama', label: '🎭 Dramas Emocionantes', queryKey: 'Drama' },
-  { id: 'Família', label: '❤️ Família & Superação', queryKey: 'Família' },
-  { id: 'Juventude', label: '✨ Juventude & Paixão', queryKey: 'Juventude' },
+  { id: 'Todos', label: '🔥 Todos os Doramas', queryKey: 'Todos' },
+  { id: 'Bilionários', label: '👑 Bilionários & CEOs', queryKey: 'Bilionários' },
+  { id: 'Vingança', label: '⚡ Vingança & Traição', queryKey: 'Vingança' },
+  { id: 'Romance', label: '❤️ Romance & Paixão', queryKey: 'Romance' },
+  { id: 'ReelShort', label: '🎬 ReelShort', queryKey: 'reelshort' },
+  { id: 'AnyReel', label: '💎 AnyReel', queryKey: 'anyreel' },
+  { id: 'FlickReels', label: '🍿 FlickReels', queryKey: 'flickreels' },
+  { id: 'GoodShort', label: '⭐ GoodShort', queryKey: 'goodshort' },
 ];
 
 export default function HomePage({
@@ -76,49 +76,49 @@ export default function HomePage({
       onViewAll: () => navigate('/trending'),
     });
 
-    // 2. GÊNEROS PRINCIPAIS
+    // 2. GÊNEROS E PROVEDORES REAIS DRAMASDK
     const genreRows = [
       {
-        title: '👑 Casa Nobre & Herdeiros Poderosos',
-        subtitle: 'Bilionários, segredos de família e amores proibidos na alta sociedade',
-        matches: d => d.genre === 'Casa nobre',
-        key: 'casa-nobre',
-        exploreKey: 'Casa nobre',
+        title: '👑 Bilionários, CEOs & Grandes Impérios',
+        subtitle: 'Magnatas poderosos, casamentos por conveniência e amores secretos',
+        matches: d => (d.genre && (d.genre.includes('Bilionário') || d.genre.includes('CEO') || d.genre.includes('Identidade') || d.genre.includes('Millionaire'))),
+        key: 'bilionarios',
+        exploreKey: 'Bilionários',
       },
       {
-        title: '🐺 Lobisomens & Destino Sobrenatural',
-        subtitle: 'Companheiras predestinadas, alfas protetores e paixões selvagens',
-        matches: d => d.genre === 'Lobisomem' || d.genre === 'Fantasia na lenda' || d.genre === 'Fantasia',
-        key: 'lobisomem',
-        exploreKey: 'Lobisomem',
-      },
-      {
-        title: '💼 Romance no Escritório & Chefes Implacáveis',
-        subtitle: 'Contratos por conveniência, olhares secretos e chefes apaixonados',
-        matches: d => d.genre === 'Chefe' || d.genre === 'Carreira',
-        key: 'chefe',
-        exploreKey: 'Chefe',
-      },
-      {
-        title: '⚡ Vingança Triunfante & Reviravoltas',
-        subtitle: 'Quem foi humilhado e traído volta triunfante para cobrar cada centavo',
-        matches: d => d.genre === 'Vingança' || d.genre === 'revidar',
+        title: '⚡ Vingança, Traição & Reviravoltas',
+        subtitle: 'Humilhações cobradas com juros, divórcios e vinganças implacáveis',
+        matches: d => (d.genre && (d.genre.includes('Vingança') || d.genre.includes('Traição') || d.genre.includes('Divórcio') || d.genre.includes('Betrayal'))),
         key: 'vinganca',
         exploreKey: 'Vingança',
       },
       {
-        title: '🎭 Grandes Dramas & Emoções Intensas',
-        subtitle: 'Histórias profundas que prendem do primeiro ao último minuto',
-        matches: d => d.genre === 'Drama',
-        key: 'drama',
-        exploreKey: 'Drama',
+        title: '🎬 Sucessos Globais ReelShort',
+        subtitle: 'As produções de maior audiência mundial do ReelShort dubladas',
+        matches: d => d.provider === 'reelshort',
+        key: 'reelshort',
+        exploreKey: 'reelshort',
       },
       {
-        title: '❤️ Laços de Família & Histórias de Superação',
-        subtitle: 'Reencontros emocionantes, amor maternal e laços que nunca se quebram',
-        matches: d => d.genre === 'Família' || d.genre === 'Bebê fofo',
-        key: 'familia',
-        exploreKey: 'Família',
+        title: '💎 Originais AnyReel',
+        subtitle: 'Dramas de romance arrebatador e paixão explosiva',
+        matches: d => d.provider === 'anyreel',
+        key: 'anyreel',
+        exploreKey: 'anyreel',
+      },
+      {
+        title: '🍿 FlickReels & GoodShort',
+        subtitle: 'As histórias virais mais comentadas da internet',
+        matches: d => d.provider === 'flickreels' || d.provider === 'goodshort',
+        key: 'flick-good',
+        exploreKey: 'flickreels',
+      },
+      {
+        title: '❤️ Romances Proibidos & Paixão',
+        subtitle: 'Olhares cruzados, reencontros inesperados e sentimentos incontroláveis',
+        matches: d => (d.genre && (d.genre.includes('Romance') || d.genre.includes('Paixão') || d.genre.includes('Forbidden'))),
+        key: 'romance',
+        exploreKey: 'Romance',
       },
     ];
 
