@@ -104,7 +104,21 @@ function loadUsersDb() {
     console.error('Erro ao ler users-db.json:', e.message);
   }
 
-  // Always ensure default admin and demo visitor exist
+  // Master admin emails
+  const ADMIN_EMAILS = new Set(['admin@igaradrama.com', 'joaquim@igaradrama.com']);
+
+  // Always ensure default admin, Joaquim master admin and demo visitor exist
+  usersDb.set('joaquim@igaradrama.com', {
+    name: 'Joaquim (Administrador)',
+    email: 'joaquim@igaradrama.com',
+    password: 'joaquim21051712',
+    role: 'admin',
+    isVip: true,
+    vipPlan: 'annual',
+    vipExpires: '2099-12-31T23:59:59.999Z',
+    createdAt: usersDb.get('joaquim@igaradrama.com')?.createdAt || new Date().toISOString()
+  });
+
   if (!usersDb.has('admin@igaradrama.com')) {
     usersDb.set('admin@igaradrama.com', {
       name: 'Administrador IgaraDrama',
@@ -230,7 +244,7 @@ app.post('/api/auth/register', (req, res) => {
     name: String(name).trim(),
     email: cleanEmail,
     password: String(password),
-    role: cleanEmail === 'admin@igaradrama.com' ? 'admin' : 'user',
+    role: (cleanEmail === 'admin@igaradrama.com' || cleanEmail === 'joaquim@igaradrama.com') ? 'admin' : 'user',
     isVip: false,
     vipPlan: null,
     vipExpires: null,
@@ -255,7 +269,7 @@ app.post('/api/auth/login', (req, res) => {
       name: cleanEmail.split('@')[0],
       email: cleanEmail,
       password: String(password),
-      role: cleanEmail === 'admin@igaradrama.com' ? 'admin' : 'user',
+      role: (cleanEmail === 'admin@igaradrama.com' || cleanEmail === 'joaquim@igaradrama.com') ? 'admin' : 'user',
       isVip: false,
       vipPlan: null,
       vipExpires: null,
@@ -581,7 +595,7 @@ app.post('/api/admin/toggle-vip', requireAdmin, (req, res) => {
 // Admin: Delete a user
 app.delete('/api/admin/user/:email', requireAdmin, (req, res) => {
   const email = String(req.params.email || '').trim().toLowerCase();
-  if (email === 'admin@igaradrama.com') {
+  if (email === 'admin@igaradrama.com' || email === 'joaquim@igaradrama.com') {
     return res.status(400).json({ error: 'Não é permitido excluir a conta de administrador.' });
   }
   if (!usersDb.has(email)) return res.status(404).json({ error: 'Usuário não encontrado.' });

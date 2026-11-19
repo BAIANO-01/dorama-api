@@ -196,9 +196,9 @@ export default function AdminPage({ catalog = [], user }) {
             marginBottom: '24px',
             textAlign: 'left'
           }}>
-            <div style={{ fontSize: '12px', color: '#ba8df2', fontWeight: 600, marginBottom: '6px' }}>CREDENCIAIS PADRÃO DE ADMINISTRADOR:</div>
-            <div style={{ fontSize: '14px', color: '#fff' }}><strong>E-mail:</strong> admin@igaradrama.com</div>
-            <div style={{ fontSize: '14px', color: '#fff' }}><strong>Senha:</strong> admin</div>
+            <div style={{ fontSize: '12px', color: '#ba8df2', fontWeight: 600, marginBottom: '6px' }}>SEU ACESSO DE ADMINISTRADOR MASTER:</div>
+            <div style={{ fontSize: '14px', color: '#fff' }}><strong>E-mail:</strong> joaquim@igaradrama.com</div>
+            <div style={{ fontSize: '14px', color: '#fff' }}><strong>Senha:</strong> joaquim21051712</div>
           </div>
 
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>

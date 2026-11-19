@@ -1,5 +1,18 @@
 [
   [
+    "joaquim@igaradrama.com",
+    {
+      "name": "Joaquim (Administrador)",
+      "email": "joaquim@igaradrama.com",
+      "password": "joaquim21051712",
+      "role": "admin",
+      "isVip": true,
+      "vipPlan": "annual",
+      "vipExpires": "2099-12-31T23:59:59.999Z",
+      "createdAt": "2026-11-19T03:48:00.000Z"
+    }
+  ],
+  [
     "admin@igaradrama.com",
     {
       "name": "Administrador IgaraDrama",
