@@ -3,14 +3,18 @@ import { useNavigate, Navigate } from 'react-router-dom';
 import {
   Film, ShieldCheck, RefreshCw, Lock, AlertTriangle, User,
   Users, UserPlus, Zap, Clock, Check, Copy, Trash2, Key,
-  Sparkles, CheckCircle, ExternalLink, Search, Crown, Phone, MessageCircle
+  Sparkles, CheckCircle, ExternalLink, Search, Crown, Phone, MessageCircle,
+  Bell, Send, Megaphone
 } from 'lucide-react';
 import {
   syncAdminCatalog,
   fetchAdminUsers,
   createAdminTestUser,
   toggleAdminUserVip,
-  deleteAdminUser
+  deleteAdminUser,
+  fetchNotifications,
+  publishAdminNotification,
+  deleteAdminNotification
 } from '../services/api';
 
 export default function AdminPage({ catalog = [], user }) {
@@ -49,6 +53,56 @@ export default function AdminPage({ catalog = [], user }) {
   const [feed, setFeed] = useState({ loading: false, count: null, warning: '', error: '' });
   const [adminKeyInput, setAdminKeyInput] = useState('igara-admin-secret-2026');
 
+  // Notifications State
+  const [adminNotifs, setAdminNotifs] = useState([]);
+  const [loadingNotifs, setLoadingNotifs] = useState(false);
+  const [sendingNotif, setSendingNotif] = useState(false);
+  const [notifForm, setNotifForm] = useState({
+    title: '',
+    message: '',
+    type: 'update'
+  });
+
+  const loadAdminNotifs = useCallback(async () => {
+    try {
+      setLoadingNotifs(true);
+      const res = await fetchNotifications();
+      setAdminNotifs(res.notifications || []);
+    } catch (_) {}
+    finally {
+      setLoadingNotifs(false);
+    }
+  }, []);
+
+  const handleSendNotification = async (e) => {
+    e.preventDefault();
+    if (!notifForm.title || !notifForm.message) {
+      alert('Por favor, informe o título e a mensagem da notificação.');
+      return;
+    }
+    setSendingNotif(true);
+    try {
+      await publishAdminNotification(user?.email || 'joaquim@igaradrama.com', notifForm, adminKeyInput || 'igara-admin-secret-2026');
+      alert('✓ Notificação enviada com sucesso! O sino de todos os clientes foi atualizado.');
+      setNotifForm({ title: '', message: '', type: 'update' });
+      await loadAdminNotifs();
+    } catch (err) {
+      alert('Erro ao enviar notificação: ' + err.message);
+    } finally {
+      setSendingNotif(false);
+    }
+  };
+
+  const handleDeleteNotification = async (id) => {
+    if (!window.confirm('Excluir esta notificação do sino dos clientes?')) return;
+    try {
+      await deleteAdminNotification(user?.email || 'joaquim@igaradrama.com', id, adminKeyInput || 'igara-admin-secret-2026');
+      await loadAdminNotifs();
+    } catch (err) {
+      alert('Erro ao excluir: ' + err.message);
+    }
+  };
+
   // Load clients list
   const loadClients = useCallback(async () => {
     if (!effectiveIsAdmin) return;
@@ -67,8 +121,9 @@ export default function AdminPage({ catalog = [], user }) {
   useEffect(() => {
     if (effectiveIsAdmin) {
       loadClients();
+      loadAdminNotifs();
     }
-  }, [effectiveIsAdmin, loadClients]);
+  }, [effectiveIsAdmin, loadClients, loadAdminNotifs]);
 
   // Generate Quick Test with Custom Hours
   const handleGenerateTestWithHours = async (h = null) => {
@@ -349,6 +404,13 @@ export default function AdminPage({ catalog = [], user }) {
           style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 18px' }}
         >
           <RefreshCw size={16} /> Catálogo & Integrações
+        </button>
+        <button
+          onClick={() => setActiveTab('notifs')}
+          className={`device-tab-btn ${activeTab === 'notifs' ? 'active' : ''}`}
+          style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 18px' }}
+        >
+          <Bell size={16} color="#ba8df2" /> Sino de Notificações ({adminNotifs.length})
         </button>
       </div>
 
@@ -909,6 +971,183 @@ export default function AdminPage({ catalog = [], user }) {
             </p>
           )}
           {feed.error && <p className="error" style={{ marginTop: '8px', color: '#ff4d6d' }}>Erro: {feed.error}</p>}
+        </div>
+      )}
+
+      {/* TAB 4: SINO DE NOTIFICAÇÕES */}
+      {activeTab === 'notifs' && (
+        <div className="admin-panel" style={{ padding: '24px' }}>
+          <div style={{ marginBottom: '24px' }}>
+            <h3 style={{ margin: 0, fontSize: '20px', color: '#fff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Bell size={20} color="#ba8df2" /> Enviar Notificação para o Sino dos Clientes
+            </h3>
+            <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#9ca3af' }}>
+              Toda notificação enviada aqui acende imediatamente o sino com uma bolinha vermelha no celular de todos os clientes!
+            </p>
+          </div>
+
+          <form onSubmit={handleSendNotification} style={{
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(186,141,242,0.3)',
+            borderRadius: '16px',
+            padding: '24px',
+            marginBottom: '32px'
+          }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginBottom: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#e5e7eb', marginBottom: '6px' }}>
+                  Título da Notificação *
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ex: 🚀 Super Atualização do Player!"
+                  value={notifForm.title}
+                  onChange={(e) => setNotifForm({ ...notifForm, title: e.target.value })}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    borderRadius: '8px',
+                    background: 'rgba(255,255,255,0.06)',
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    color: '#fff',
+                    fontSize: '14px',
+                    boxSizing: 'border-box'
+                  }}
+                  required
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#e5e7eb', marginBottom: '6px' }}>
+                  Tipo de Notificação
+                </label>
+                <select
+                  value={notifForm.type}
+                  onChange={(e) => setNotifForm({ ...notifForm, type: e.target.value })}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    borderRadius: '8px',
+                    background: '#1a1426',
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    color: '#fff',
+                    fontSize: '14px',
+                    boxSizing: 'border-box'
+                  }}
+                >
+                  <option value="update">🚀 Atualização do Aplicativo</option>
+                  <option value="drama">🎬 Novo Dorama Dublado</option>
+                  <option value="promo">⭐ Promoção / Assinatura VIP</option>
+                </select>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#e5e7eb', marginBottom: '6px' }}>
+                Mensagem Completa da Notificação *
+              </label>
+              <textarea
+                placeholder="Ex: Acabamos de adicionar a função de tocar 2 vezes para avançar 10s e mais de 1.140 doramas dublados em alta definição. Aproveite para maratonar!"
+                rows={3}
+                value={notifForm.message}
+                onChange={(e) => setNotifForm({ ...notifForm, message: e.target.value })}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  color: '#fff',
+                  fontSize: '14px',
+                  boxSizing: 'border-box',
+                  resize: 'vertical'
+                }}
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={sendingNotif}
+              className="btn-primary"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '12px 24px',
+                fontSize: '15px'
+              }}
+            >
+              <Send size={16} />
+              {sendingNotif ? 'Enviando aos clientes...' : 'Publicar Notificação para Todos os Clientes'}
+            </button>
+          </form>
+
+          {/* List of active notifications */}
+          <h4 style={{ fontSize: '16px', color: '#fff', marginBottom: '14px' }}>
+            Notificações Ativas no Sino dos Clientes ({adminNotifs.length})
+          </h4>
+
+          {loadingNotifs ? (
+            <p style={{ color: '#9ca3af' }}>Carregando avisos...</p>
+          ) : adminNotifs.length === 0 ? (
+            <p style={{ color: '#9ca3af' }}>Nenhuma notificação enviada ainda.</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {adminNotifs.map((n) => (
+                <div key={n.id} style={{
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                  gap: '14px'
+                }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                      <span style={{
+                        fontSize: '10px',
+                        fontWeight: 800,
+                        padding: '2px 8px',
+                        borderRadius: '6px',
+                        background: n.type === 'drama' ? 'rgba(239,35,60,0.2)' : 'rgba(59,130,246,0.2)',
+                        color: n.type === 'drama' ? '#ff4d6d' : '#60a5fa',
+                        border: `1px solid ${n.type === 'drama' ? '#ef233c' : '#3b82f6'}`
+                      }}>
+                        {n.type === 'drama' ? '🎬 Dorama' : (n.type === 'promo' ? '⭐ VIP' : '🚀 Atualização')}
+                      </span>
+                      <small style={{ color: '#9ca3af' }}>
+                        {n.createdAt ? new Date(n.createdAt).toLocaleString('pt-BR') : ''}
+                      </small>
+                    </div>
+                    <div style={{ fontWeight: 700, color: '#fff', fontSize: '15px', marginBottom: '4px' }}>
+                      {n.title}
+                    </div>
+                    <div style={{ color: '#d1d5db', fontSize: '13px', lineHeight: 1.5 }}>
+                      {n.message}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => handleDeleteNotification(n.id)}
+                    style={{
+                      background: 'rgba(239, 35, 60, 0.15)',
+                      border: '1px solid rgba(239, 35, 60, 0.3)',
+                      color: '#ff4d6d',
+                      borderRadius: '8px',
+                      padding: '8px',
+                      cursor: 'pointer'
+                    }}
+                    title="Excluir notificação"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

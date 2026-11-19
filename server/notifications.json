@@ -1,0 +1,16 @@
+[
+  {
+    "id": "notif-1",
+    "title": "🚀 Super Atualização do Player e Catálogo!",
+    "message": "Agora você pode tocar duas vezes na tela para avançar ou retroceder 10 segundos! Mais de 1.140 Doramas 100% dublados em português já estão disponíveis em alta definição. Aproveite!",
+    "type": "update",
+    "createdAt": "2026-11-19T22:35:00.000Z"
+  },
+  {
+    "id": "notif-2",
+    "title": "👑 Sucesso no Brasil: A Madrasta Durona",
+    "message": "A história de Sadie e os três selvagens da máfia já está completa e liberada com dublagem profissional em HD. Venha maratonar!",
+    "type": "drama",
+    "createdAt": "2026-11-19T20:00:00.000Z"
+  }
+]

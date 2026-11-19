@@ -6,16 +6,15 @@ import {
 import Section from '../components/Section';
 import { HeroSkeleton, CardSkeleton } from '../components/Skeletons';
 
-// Curated high-impact streaming categories from DramaSDK
+// Curated high-impact streaming categories (100% Dublado PT-BR)
 const STREAMING_CATEGORIES = [
-  { id: 'Dublado', label: '🇧🇷 Dublados em Português', queryKey: 'Dublado' },
   { id: 'Todos', label: '🔥 Todos os Doramas', queryKey: 'Todos' },
-  { id: 'Bilionários', label: '👑 Bilionários & Máfia', queryKey: 'Bilionários' },
+  { id: 'Dublado', label: '🇧🇷 Dublados em Português', queryKey: 'Dublado' },
+  { id: 'Bilionários', label: '👑 Bilionários & CEOs', queryKey: 'Bilionários' },
+  { id: 'Máfia', label: '🔫 Máfia & Poder', queryKey: 'Máfia' },
   { id: 'Vingança', label: '⚡ Vingança & Traição', queryKey: 'Vingança' },
   { id: 'Romance', label: '❤️ Romance & Paixão', queryKey: 'Romance' },
-  { id: 'FlickReels', label: '🍿 FlickReels (Dublados)', queryKey: 'flickreels' },
-  { id: 'ReelShort', label: '🎬 ReelShort', queryKey: 'reelshort' },
-  { id: 'AnyReel', label: '💎 AnyReel', queryKey: 'anyreel' },
+  { id: 'Família', label: '👨‍👩‍👧 Família & Herdeiros', queryKey: 'Família' },
 ];
 
 export default function HomePage({
@@ -76,12 +75,12 @@ export default function HomePage({
       onViewAll: () => navigate('/trending'),
     });
 
-    // 2. GÊNEROS E PROVEDORES REAIS DRAMASDK
+    // 2. GÊNEROS 100% DUBLADOS EM PORTUGUÊS
     const genreRows = [
       {
         title: '🇧🇷 100% Dublados em Português (Brasil)',
         subtitle: 'Séries completas com dublagem profissional e áudio em português brasileiro',
-        matches: d => d.isDubbedPt || d.tag === 'DUBLADO PT-BR',
+        matches: d => d.isDubbedPt || d.tag === 'DUBLADO PT-BR' || (d.title && d.title.includes('Dublado')),
         key: 'dublados-pt',
         exploreKey: 'Dublado',
       },
@@ -100,32 +99,25 @@ export default function HomePage({
         exploreKey: 'Vingança',
       },
       {
-        title: '🎬 Sucessos Globais ReelShort',
-        subtitle: 'As produções de maior audiência mundial do ReelShort dubladas',
-        matches: d => d.provider === 'reelshort',
-        key: 'reelshort',
-        exploreKey: 'reelshort',
-      },
-      {
-        title: '💎 Originais AnyReel',
-        subtitle: 'Dramas de romance arrebatador e paixão explosiva',
-        matches: d => d.provider === 'anyreel',
-        key: 'anyreel',
-        exploreKey: 'anyreel',
-      },
-      {
-        title: '🍿 FlickReels & GoodShort',
-        subtitle: 'As histórias virais mais comentadas da internet',
-        matches: d => d.provider === 'flickreels' || d.provider === 'goodshort',
-        key: 'flick-good',
-        exploreKey: 'flickreels',
-      },
-      {
-        title: '❤️ Romances Proibidos & Paixão',
+        title: '❤️ Romances Proibidos & Paixão Ardente',
         subtitle: 'Olhares cruzados, reencontros inesperados e sentimentos incontroláveis',
         matches: d => (d.genre && (d.genre.includes('Romance') || d.genre.includes('Paixão') || d.genre.includes('Forbidden'))),
         key: 'romance',
         exploreKey: 'Romance',
+      },
+      {
+        title: '👨‍👩‍👧 Família, Bebês & Segredos Revelados',
+        subtitle: 'Crianças herdeiras, mães guerreiras e laços inquebráveis',
+        matches: d => (d.genre && (d.genre.includes('Família') || d.genre.includes('Bebê') || d.genre.includes('Herdeir'))),
+        key: 'familia',
+        exploreKey: 'Família',
+      },
+      {
+        title: '🍿 Mais Assistidos da Semana no Brasil',
+        subtitle: 'As histórias que estão conquistando o público brasileiro',
+        matches: () => true,
+        key: 'populares-br',
+        exploreKey: 'Todos',
       },
     ];
 
@@ -136,7 +128,7 @@ export default function HomePage({
           key: row.key,
           title: row.title,
           subtitle: row.subtitle,
-          items: matchingItems,
+          items: matchingItems.slice(0, 16),
           showRank: false,
           onViewAll: () => goCategory(row.exploreKey),
         });

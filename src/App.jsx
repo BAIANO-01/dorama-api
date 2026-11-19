@@ -67,6 +67,37 @@ function AppRoutes() {
     navigate('/auth');
   }, [handleLogout, navigate]);
 
+  // Native Android Back Button Handler (Capacitor)
+  React.useEffect(() => {
+    let handlerRef = null;
+    const isNative = typeof window !== 'undefined' && (
+      window.Capacitor?.isNativePlatform?.() ||
+      window.location.protocol === 'capacitor:' ||
+      (window.location.hostname === 'localhost' && !window.location.port)
+    );
+
+    if (isNative) {
+      import('@capacitor/app').then(({ App: CapApp }) => {
+        CapApp.addListener('backButton', () => {
+          const currentPath = window.location.pathname;
+          if (currentPath === '/') {
+            CapApp.exitApp();
+          } else {
+            navigate('/');
+          }
+        }).then(h => {
+          handlerRef = h;
+        }).catch(() => {});
+      }).catch(() => {});
+    }
+
+    return () => {
+      if (handlerRef?.remove) {
+        handlerRef.remove();
+      }
+    };
+  }, [navigate]);
+
   return (
     <Layout
       user={user}

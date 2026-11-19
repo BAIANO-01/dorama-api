@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Play, Pause, SkipBack, SkipForward, List, Crown,
-  Volume2, VolumeX, Maximize, X, ShieldCheck
+  ArrowLeft, Home, Play, Pause, SkipBack, SkipForward, RotateCcw, RotateCw,
+  List, Crown, Volume2, VolumeX, Maximize, X, ShieldCheck
 } from 'lucide-react';
 import Hls from 'hls.js';
 import { fetchEpisodes } from '../services/api';
@@ -47,7 +47,11 @@ export default function WatchPage({ catalog = [], catalogLoading = false, user, 
   const [error, setError] = useState('');
   const [isVipBlocked, setIsVipBlocked] = useState(false);
   const [nextDramaToast, setNextDramaToast] = useState(null);
+  const [seekFeedback, setSeekFeedback] = useState(null);
+
   const endedTriggeredRef = useRef(false);
+  const lastTapRef = useRef({ time: 0, x: 0 });
+  const seekTimeoutRef = useRef(null);
 
   // Reset autoplay flag when drama or episode changes
   useEffect(() => {
@@ -146,6 +150,46 @@ export default function WatchPage({ catalog = [], catalogLoading = false, user, 
       setShowControls(false);
     }, 3800);
   }, []);
+
+  // Relative Seek (-10s / +10s)
+  const seekRelative = useCallback((delta) => {
+    if (!videoRef.current) return;
+    const dur = videoRef.current.duration || 999;
+    const newTime = Math.max(0, Math.min(dur, videoRef.current.currentTime + delta));
+    videoRef.current.currentTime = newTime;
+    setCurrentTime(newTime);
+
+    if (seekTimeoutRef.current) clearTimeout(seekTimeoutRef.current);
+    setSeekFeedback(delta > 0 ? '+10s ⏩' : '⏪ -10s');
+    seekTimeoutRef.current = setTimeout(() => setSeekFeedback(null), 850);
+    resetControlsTimer();
+  }, [resetControlsTimer]);
+
+  // Handle Smart Touch / Click on Screen
+  const handleScreenInteraction = (e) => {
+    // Ignore interactive UI elements
+    if (e.target.closest('button') || e.target.closest('input') || e.target.closest('.watch-episodes-sheet') || e.target.closest('.watch-vip-screen')) {
+      return;
+    }
+
+    const now = Date.now();
+    const rect = containerRef.current?.getBoundingClientRect() || { width: window.innerWidth, left: 0 };
+    const clickX = e.clientX - rect.left;
+    const isRight = clickX > (rect.width / 2);
+    const diff = now - lastTapRef.current.time;
+
+    if (diff < 340) {
+      // Double tap: seek forward or backward!
+      seekRelative(isRight ? 10 : -10);
+      lastTapRef.current = { time: 0, x: clickX };
+      return;
+    }
+
+    // Single tap: toggle controls (NEVER pause!)
+    lastTapRef.current = { time: now, x: clickX };
+    setShowControls(prev => !prev);
+    resetControlsTimer();
+  };
 
   // Handle Video Loading & Hls
   useEffect(() => {
@@ -383,7 +427,7 @@ export default function WatchPage({ catalog = [], catalogLoading = false, user, 
     <div
       className="watch-page-container"
       ref={containerRef}
-      onClick={resetControlsTimer}
+      onClick={handleScreenInteraction}
       onMouseMove={resetControlsTimer}
     >
       {/* ── VIDEO ELEMENT (FULLSCREEN) ── */}
@@ -418,8 +462,30 @@ export default function WatchPage({ catalog = [], catalogLoading = false, user, 
             handleAdvance();
           }
         }}
-        onClick={togglePlay}
       />
+
+      {/* ── DOUBLE TAP SEEK FEEDBACK TOAST ── */}
+      {seekFeedback && (
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          background: 'rgba(0, 0, 0, 0.85)',
+          border: '1px solid rgba(255, 255, 255, 0.3)',
+          color: '#fff',
+          padding: '14px 24px',
+          borderRadius: '24px',
+          fontSize: '18px',
+          fontWeight: 800,
+          zIndex: 35,
+          pointerEvents: 'none',
+          boxShadow: '0 8px 30px rgba(0,0,0,0.7)',
+          animation: 'fade-in 0.15s ease'
+        }}>
+          {seekFeedback}
+        </div>
+      )}
 
       {/* ── LOADING SPINNER ── */}
       {loadingVideo && (
@@ -459,15 +525,31 @@ export default function WatchPage({ catalog = [], catalogLoading = false, user, 
 
       {/* ── FLOATING OVERLAY CONTROLS ── */}
       <div className={`watch-controls-layer ${showControls ? 'visible' : 'hidden'}`}>
-        {/* Top Bar: Back Button + Title + HD Tag */}
+        {/* Top Bar: Back & Home Button + Title + HD Tag */}
         <div className="watch-top-bar">
-          <button
-            className="watch-back-btn"
-            onClick={(e) => { e.stopPropagation(); navigate(`/drama/${drama?.id || id}`); }}
-            aria-label="Voltar para detalhes do dorama"
-          >
-            <ArrowLeft size={22} />
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button
+              className="watch-back-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (window.history.length > 2) navigate(-1);
+                else navigate('/');
+              }}
+              aria-label="Voltar"
+              title="Voltar"
+            >
+              <ArrowLeft size={22} />
+            </button>
+            <button
+              className="watch-icon-btn"
+              onClick={(e) => { e.stopPropagation(); navigate('/'); }}
+              aria-label="Início"
+              title="Ir para o Início"
+              style={{ width: '36px', height: '36px' }}
+            >
+              <Home size={18} />
+            </button>
+          </div>
 
           <div className="watch-title-block">
             <h3>{currentTitle}</h3>
@@ -481,16 +563,20 @@ export default function WatchPage({ catalog = [], catalogLoading = false, user, 
           </div>
         </div>
 
-        {/* Center Tap Play/Pause Feedback Icon */}
-        <div className="watch-center-play-feedback" onClick={togglePlay}>
-          {!isPlaying && (
-            <div className="play-pause-circle">
-              <Play size={36} fill="#fff" />
-            </div>
-          )}
+        {/* Center Tap Play/Pause Button */}
+        <div className="watch-center-play-feedback">
+          <div
+            className="play-pause-circle"
+            onClick={togglePlay}
+            role="button"
+            tabIndex={0}
+            aria-label={isPlaying ? 'Pausar vídeo' : 'Reproduzir vídeo'}
+          >
+            {isPlaying ? <Pause size={36} fill="#fff" /> : <Play size={36} fill="#fff" />}
+          </div>
         </div>
 
-        {/* Bottom Bar: Progress, Time, Prev/Next, Episodes Drawer Toggle */}
+        {/* Bottom Bar: Progress, Time, Prev/Next, Fast Seek, Episodes Drawer */}
         <div className="watch-bottom-bar" onClick={(e) => e.stopPropagation()}>
           {/* Progress Scrubber */}
           <div className="watch-progress-container">
@@ -515,8 +601,29 @@ export default function WatchPage({ catalog = [], catalogLoading = false, user, 
                 className="watch-icon-btn"
                 onClick={togglePlay}
                 aria-label={isPlaying ? 'Pausar' : 'Reproduzir'}
+                title={isPlaying ? 'Pausar' : 'Reproduzir'}
               >
                 {isPlaying ? <Pause size={18} /> : <Play size={18} fill="currentColor" />}
+              </button>
+
+              {/* Fast Seek -10s */}
+              <button
+                className="watch-icon-btn"
+                onClick={() => seekRelative(-10)}
+                title="Voltar 10 segundos"
+                aria-label="Voltar 10s"
+              >
+                <RotateCcw size={16} />
+              </button>
+
+              {/* Fast Seek +10s */}
+              <button
+                className="watch-icon-btn"
+                onClick={() => seekRelative(+10)}
+                title="Avançar 10 segundos"
+                aria-label="Avançar 10s"
+              >
+                <RotateCw size={16} />
               </button>
 
               <button

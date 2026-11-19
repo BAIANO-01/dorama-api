@@ -122,6 +122,48 @@ export async function deleteAdminUser(userEmail, targetEmail, adminKey) {
   return res.json();
 }
 
+/** Notificações / Sino do App */
+export async function fetchNotifications() {
+  try {
+    const res = await fetch(`${API_BASE}/notifications`);
+    if (!res.ok) return { notifications: [] };
+    return res.json();
+  } catch (_) {
+    return { notifications: [] };
+  }
+}
+
+export async function publishAdminNotification(userEmail, data, adminKey) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (userEmail) headers['x-user-email'] = userEmail;
+  if (adminKey) headers['x-admin-key'] = adminKey;
+  const res = await fetch(`${API_BASE}/admin/notifications`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Erro ao publicar notificação');
+  }
+  return res.json();
+}
+
+export async function deleteAdminNotification(userEmail, id, adminKey) {
+  const headers = {};
+  if (userEmail) headers['x-user-email'] = userEmail;
+  if (adminKey) headers['x-admin-key'] = adminKey;
+  const res = await fetch(`${API_BASE}/admin/notifications/${id}`, {
+    method: 'DELETE',
+    headers
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Erro ao excluir notificação');
+  }
+  return res.json();
+}
+
 /** Busca episódios de uma série */
 export async function fetchEpisodes(rawId, lang = 'pt') {
   const cleanId = String(rawId).replace(/^shortmax-/, '');

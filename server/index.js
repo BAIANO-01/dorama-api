@@ -70,9 +70,15 @@ try {
   console.error('Erro ao ler catalog-pt.json:', e.message);
 }
 
-// In-memory catalog: 100% real titles from DramaSDK API
+// In-memory catalog: 100% real Brazilian Portuguese Dublado titles from DramaSDK API
 function getMergedCatalog() {
-  return dramaSdkCatalog;
+  return dramaSdkCatalog.filter(d =>
+    d.isDubbedPt ||
+    d.language === 'pt-BR' ||
+    d.provider === 'flickreels' ||
+    (d.title && d.title.includes('[Dublado')) ||
+    (d.tag && d.tag.includes('DUBLADO'))
+  );
 }
 
 const catalogCache = new Map();
@@ -621,6 +627,71 @@ app.delete('/api/admin/user/:email', requireAdmin, (req, res) => {
   usersDb.delete(email);
   saveUsersDb();
   res.json({ ok: true, message: `Cliente ${email} removido com sucesso.` });
+});
+
+/* =========================================
+   NOTIFICATIONS / SINO & APP VERSION SYSTEM
+   ========================================= */
+
+const notifsFile = path.join(__dirname, 'notifications.json');
+let notificationsList = [];
+
+function loadNotifications() {
+  try {
+    if (fs.existsSync(notifsFile)) {
+      notificationsList = JSON.parse(fs.readFileSync(notifsFile, 'utf8'));
+    }
+  } catch (e) {
+    console.error('Erro ao ler notifications.json:', e.message);
+  }
+}
+function saveNotifications() {
+  try {
+    fs.writeFileSync(notifsFile, JSON.stringify(notificationsList, null, 2), 'utf8');
+  } catch (e) {
+    console.error('Erro ao salvar notifications.json:', e.message);
+  }
+}
+loadNotifications();
+
+// Public: Get all notifications & app version for clients
+app.get('/api/notifications', (_req, res) => {
+  res.json({
+    ok: true,
+    version: '1.2.0',
+    updatedAt: notificationsList[0]?.createdAt || new Date().toISOString(),
+    notifications: notificationsList
+  });
+});
+
+// Admin: Publish a new notification to all clients
+app.post('/api/admin/notifications', requireAdmin, (req, res) => {
+  const { title, message, type = 'update' } = req.body;
+  if (!title || !message) {
+    return res.status(400).json({ error: 'Título e mensagem são obrigatórios.' });
+  }
+
+  const newNotif = {
+    id: `notif-${Date.now()}`,
+    title: String(title).trim(),
+    message: String(message).trim(),
+    type: type || 'update',
+    createdAt: new Date().toISOString()
+  };
+
+  notificationsList.unshift(newNotif);
+  if (notificationsList.length > 50) notificationsList = notificationsList.slice(0, 50);
+  saveNotifications();
+
+  res.json({ ok: true, notification: newNotif, message: 'Notificação enviada com sucesso para todos os clientes!' });
+});
+
+// Admin: Delete a notification
+app.delete('/api/admin/notifications/:id', requireAdmin, (req, res) => {
+  const id = req.params.id;
+  notificationsList = notificationsList.filter(n => n.id !== id);
+  saveNotifications();
+  res.json({ ok: true, message: 'Notificação removida com sucesso.' });
 });
 
 /* =========================================

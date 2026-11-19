@@ -2006,3 +2006,124 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* =========================================
+   MOBILE RESPONSIVENESS FOR VIP PAGE
+   ========================================= */
+@media (max-width: 768px) {
+  .vip-page {
+    padding: 12px 6px 60px;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .vip-header {
+    margin-bottom: 20px;
+    padding: 0 10px;
+  }
+
+  .vip-title-main {
+    font-size: 24px;
+    line-height: 1.2;
+  }
+
+  .vip-subtitle {
+    font-size: 13px;
+    margin-top: 6px;
+    padding: 0 10px;
+  }
+
+  .vip-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
+    padding: 0 8px;
+    box-sizing: border-box;
+  }
+
+  .vip-mockup-wrapper {
+    width: 100%;
+    max-width: 240px;
+    margin: 0 auto;
+  }
+
+  .vip-mockup-glow {
+    width: 200px;
+    height: 200px;
+  }
+
+  .vip-mockup-img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 14px;
+  }
+
+  .vip-content-wrapper {
+    width: 100%;
+    max-width: 100%;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  .vip-plans-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    width: 100%;
+  }
+
+  .plan-card {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    text-align: left;
+    gap: 12px;
+  }
+
+  .plan-card .plan-icon-wrapper {
+    margin-bottom: 0;
+  }
+
+  .plan-card .plan-price {
+    font-size: 24px;
+    margin: 0;
+  }
+
+  .plan-card .plan-name {
+    font-size: 14px;
+  }
+
+  .vantagens-divider {
+    font-size: 12px;
+    margin: 16px 0 10px;
+  }
+
+  .vantagens-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    width: 100%;
+  }
+
+  .vantagem-card {
+    padding: 8px 4px;
+  }
+
+  .vantagem-label {
+    font-size: 11px;
+  }
+
+  .cta-huge-red {
+    width: 100%;
+    padding: 16px;
+    font-size: 15px;
+    box-sizing: border-box;
+    margin-top: 10px;
+  }
+}
+

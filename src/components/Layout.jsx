@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
-  Home, Compass, Flame, Heart, Clock, User, Crown, Settings, Menu, Search, X, LogOut, ChevronDown, Smartphone, Download, Phone
+  Home, Compass, Flame, Heart, Clock, User, Crown, Settings, Menu, Search, X, LogOut, ChevronDown, Smartphone, Download, Phone, Bell, Sparkles
 } from 'lucide-react';
+import { fetchNotifications } from '../services/api';
 
 const NAV_LINKS = [
   { label: 'Início', path: '/' },
@@ -35,10 +36,42 @@ export default function Layout({
   const [scrolled, setScrolled] = useState(false);
   const [searchOpenMobile, setSearchOpenMobile] = useState(false);
 
+  // Notification Bell State
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notifModalOpen, setNotifModalOpen] = useState(false);
+
   const navigate = useNavigate();
   const location = useLocation();
   const currentPath = location.pathname;
   const userMenuRef = useRef(null);
+
+  // Load and poll notifications
+  useEffect(() => {
+    const loadNotifs = async () => {
+      try {
+        const res = await fetchNotifications();
+        if (Array.isArray(res.notifications)) {
+          setNotifications(res.notifications);
+          const readIds = JSON.parse(localStorage.getItem('igara_read_notifs') || '[]');
+          const unread = res.notifications.filter(n => !readIds.includes(n.id)).length;
+          setUnreadCount(unread);
+        }
+      } catch (_) {}
+    };
+    loadNotifs();
+    const interval = setInterval(loadNotifs, 45000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const openNotifications = () => {
+    setNotifModalOpen(true);
+    if (notifications.length > 0) {
+      const allIds = notifications.map(n => n.id);
+      localStorage.setItem('igara_read_notifs', JSON.stringify(allIds));
+      setUnreadCount(0);
+    }
+  };
 
   // Detect scroll to add blur/background to navbar
   useEffect(() => {
@@ -148,6 +181,19 @@ export default function Layout({
               aria-label="Buscar"
             >
               <Search size={20} />
+            </button>
+
+            {/* Notification Bell (Sino de Avisos) */}
+            <button
+              className="navbar-bell-btn"
+              onClick={openNotifications}
+              aria-label="Avisos e Notificações"
+              title="Notificações"
+            >
+              <Bell size={18} />
+              {unreadCount > 0 && (
+                <span className="navbar-bell-badge">{unreadCount}</span>
+              )}
             </button>
 
             {/* VIP CTA Button */}
@@ -354,6 +400,46 @@ export default function Layout({
           </button>
         ))}
       </nav>
+
+      {/* ── NOTIFICATION MODAL ── */}
+      {notifModalOpen && (
+        <div className="notif-modal-backdrop fade-in" onClick={() => setNotifModalOpen(false)}>
+          <div className="notif-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="notif-modal-header">
+              <h3>
+                <Bell size={20} color="#ba8df2" />
+                <span>Notificações & Avisos</span>
+              </h3>
+              <button className="notif-close-btn" onClick={() => setNotifModalOpen(false)} aria-label="Fechar">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="notif-modal-body">
+              {notifications.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '30px 10px', color: '#9ca3af' }}>
+                  <Bell size={32} style={{ opacity: 0.4, marginBottom: '8px' }} />
+                  <p>Nenhuma notificação no momento.</p>
+                </div>
+              ) : (
+                notifications.map((n) => (
+                  <div key={n.id} className="notif-card">
+                    <div className="notif-card-top">
+                      <span className={`notif-badge ${n.type || 'update'}`}>
+                        {n.type === 'drama' ? '🎬 Dorama' : (n.type === 'promo' ? '⭐ VIP' : '🚀 Atualização')}
+                      </span>
+                      <span className="notif-date">
+                        {n.createdAt ? new Date(n.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : 'Recente'}
+                      </span>
+                    </div>
+                    <h4 className="notif-title">{n.title}</h4>
+                    <p className="notif-message">{n.message}</p>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

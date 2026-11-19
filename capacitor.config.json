@@ -4,7 +4,8 @@
   "webDir": "dist",
   "bundledWebRuntime": false,
   "server": {
-    "androidScheme": "https",
-    "cleartext": true
+    "url": "https://dorama-api.onrender.com",
+    "cleartext": true,
+    "androidScheme": "https"
   }
 }
