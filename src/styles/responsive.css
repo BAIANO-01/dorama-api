@@ -1,0 +1,543 @@
+/* =========================================
+   IGARADRAMA — RESPONSIVE STYLES
+   Consolidated Breakpoints: 320px to 1920px
+   ========================================= */
+
+/* ── Large Desktop (≥ 1600px) ── */
+@media (min-width: 1600px) {
+  .stream-card {
+    flex: 0 0 210px;
+    width: 210px;
+  }
+
+  .card-poster-wrapper {
+    height: 300px;
+  }
+
+  .posters-grid {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+}
+
+/* ── Standard Desktop / Laptop (1025px - 1440px) ── */
+@media (max-width: 1440px) {
+  .stream-navbar {
+    padding: 0 32px;
+  }
+
+  .home-container {
+    padding: 0 32px 50px;
+  }
+
+  .hero-spotlight {
+    min-height: 440px;
+  }
+
+  .hero-spotlight-content {
+    padding: 36px 36px 40px;
+    max-width: 640px;
+  }
+
+  .posters-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+/* ── Tablet (769px - 1024px) ── */
+@media (max-width: 1024px) {
+  .stream-navbar {
+    padding: 0 24px;
+    height: 64px;
+  }
+
+  .navbar-left {
+    gap: 20px;
+  }
+
+  .navbar-links {
+    gap: 2px;
+  }
+
+  .navbar-link {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+
+  .navbar-search {
+    width: 200px;
+  }
+
+  .navbar-search:focus-within {
+    width: 240px;
+  }
+
+  .home-container {
+    padding: 0 24px 40px;
+  }
+
+  .hero-spotlight {
+    min-height: 400px;
+  }
+
+  .hero-spotlight-content {
+    padding: 32px;
+    max-width: 580px;
+  }
+
+  .hero-title {
+    font-size: 34px;
+  }
+
+  .stream-card {
+    flex: 0 0 170px;
+    width: 170px;
+  }
+
+  .card-poster-wrapper {
+    height: 240px;
+  }
+
+  .posters-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px 12px;
+  }
+
+  .admin-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .footer-links {
+    gap: 36px;
+  }
+}
+
+/* ── Mobile Devices (≤ 768px) ── */
+@media (max-width: 768px) {
+  /* Navbar */
+  .stream-navbar {
+    padding: 0 16px;
+    height: 58px;
+    background: rgba(12, 11, 18, 0.95);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .navbar-links {
+    display: none; /* In bottom nav & mobile drawer */
+  }
+
+  .navbar-mobile-toggle {
+    display: grid;
+    place-items: center;
+  }
+
+  .navbar-left {
+    gap: 12px;
+  }
+
+  .navbar-logo-img {
+    width: 32px;
+    height: 32px;
+  }
+
+  .navbar-logo-text {
+    font-size: 19px;
+  }
+
+  .navbar-right {
+    gap: 10px;
+  }
+
+  .navbar-search {
+    display: none;
+  }
+
+  .navbar-search.mobile-expanded {
+    display: flex;
+    position: absolute;
+    top: 58px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    background: #191524;
+    border-color: var(--purple-400);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+    z-index: 105;
+  }
+
+  .navbar-icon-btn.mobile-only {
+    display: grid;
+    place-items: center;
+  }
+
+  .navbar-vip-btn {
+    padding: 7px 12px;
+    font-size: 10px;
+  }
+
+  .navbar-vip-btn span {
+    display: none;
+  }
+
+  .avatar-circle {
+    width: 32px;
+    height: 32px;
+    font-size: 12px;
+  }
+
+  .dropdown-arrow {
+    display: none;
+  }
+
+  /* Main & Layout */
+  .stream-main {
+    padding-top: 58px;
+    padding-bottom: 70px; /* Space for Bottom Nav */
+  }
+
+  .home-container {
+    padding: 0 14px 30px;
+  }
+
+  /* Hero Spotlight (Mobile) */
+  .hero-spotlight {
+    min-height: 380px;
+    margin: 10px 0 20px;
+    border-radius: var(--radius-xl);
+  }
+
+  .hero-backdrop-gradient {
+    background:
+      linear-gradient(0deg, #0c0b12 0%, rgba(12, 11, 18, 0.95) 45%, rgba(12, 11, 18, 0.4) 80%, transparent 100%);
+  }
+
+  .hero-spotlight-content {
+    padding: 24px 18px 24px;
+    max-width: 100%;
+  }
+
+  .hero-title {
+    font-size: 26px;
+    margin-bottom: 10px;
+  }
+
+  .hero-synopsis {
+    font-size: 13px;
+    line-height: 1.6;
+    margin-bottom: 20px;
+    -webkit-line-clamp: 2;
+  }
+
+  .hero-actions-row {
+    gap: 10px;
+  }
+
+  .hero-btn-play {
+    padding: 12px 20px;
+    font-size: 14px;
+    flex: 1;
+    justify-content: center;
+  }
+
+  .hero-btn-list {
+    padding: 12px 18px;
+    font-size: 13px;
+  }
+
+  .hero-btn-info {
+    display: none;
+  }
+
+  /* Category pills */
+  .categories-pill-bar {
+    top: 58px;
+    margin-bottom: 20px;
+  }
+
+  .category-pill {
+    padding: 7px 15px;
+    font-size: 12px;
+  }
+
+  /* Trust banner */
+  .stream-trust-banner {
+    padding: 12px;
+    gap: 10px;
+    justify-content: flex-start;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .trust-item {
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  /* Cards in Horizontal Row */
+  .stream-card {
+    flex: 0 0 150px;
+    width: 150px;
+  }
+
+  .card-poster-wrapper {
+    height: 215px;
+  }
+
+  .scroll-arrow {
+    display: none; /* Native touch swipe on mobile */
+  }
+
+  .section-cards-row {
+    gap: 12px;
+    padding-bottom: 10px;
+  }
+
+  .section-title {
+    font-size: 18px;
+  }
+
+  .section-subtitle {
+    font-size: 12px;
+  }
+
+  /* Posters Grid (Explore & Favorites) */
+  .posters-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 10px;
+  }
+
+  .posters-grid .card-poster-wrapper {
+    height: 220px;
+  }
+
+  /* Footer */
+  .stream-footer {
+    display: none; /* Streamlined for mobile with bottom nav */
+  }
+
+  /* ── Mobile Bottom Navigation ── */
+  .stream-bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: var(--bottom-nav-height);
+    background: rgba(14, 11, 20, 0.94);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    justify-content: space-around;
+    align-items: center;
+    padding: 4px 6px max(6px, env(safe-area-inset-bottom));
+    z-index: 150;
+  }
+
+  .bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    transition: color var(--transition-fast);
+    position: relative;
+    min-width: 50px;
+  }
+
+  .bottom-nav-item.active {
+    color: var(--purple-300);
+  }
+
+  .bottom-nav-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .bottom-vip-dot {
+    position: absolute;
+    top: -2px;
+    right: -4px;
+    width: 6px;
+    height: 6px;
+    border-radius: var(--radius-circle);
+    background: #ff1a40;
+    box-shadow: 0 0 6px #ff1a40;
+  }
+
+  /* Detail Page (Mobile) */
+  .detail-hero-card {
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding: 24px 16px;
+    margin-bottom: 28px;
+    border-radius: var(--radius-xl);
+  }
+
+  .detail-poster-wrapper {
+    flex: 0 0 auto;
+    width: 200px;
+    height: 290px;
+    margin: 0 auto;
+  }
+
+  .detail-info-pane {
+    text-align: center;
+    align-items: center;
+    width: 100%;
+  }
+
+  .detail-tag-badge {
+    align-self: center;
+  }
+
+  .detail-title {
+    font-size: 24px;
+    text-align: center;
+    margin: 12px 0 10px;
+  }
+
+  .detail-meta-pills {
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .detail-synopsis {
+    text-align: center;
+    font-size: 13px;
+    line-height: 1.6;
+    margin-bottom: 20px;
+  }
+
+  .detail-actions-row {
+    flex-direction: column;
+    width: 100%;
+    gap: 10px;
+  }
+
+  .detail-actions-row button {
+    width: 100%;
+    justify-content: center;
+    padding: 12px 18px;
+  }
+
+  .detail-license-notice {
+    justify-content: center;
+    text-align: center;
+    font-size: 11px;
+    margin-top: 14px;
+  }
+
+  .episodes-grid-modern {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 10px;
+  }
+
+  .episode-card-modern .episode-thumb-box {
+    height: 100px;
+  }
+
+  .episode-card-meta strong {
+    font-size: 12px;
+  }
+
+  .episode-card-meta small {
+    font-size: 10px;
+  }
+
+  /* Video Player Modal */
+  .player-modal {
+    padding: 0;
+  }
+
+  .player-container {
+    height: 100vh;
+    height: 100dvh;
+    max-height: none;
+    border-radius: 0;
+    border: none;
+  }
+
+  .player-body {
+    flex-direction: column;
+  }
+
+  .player-episodes-drawer {
+    width: 100%;
+    height: 250px;
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* ── Small Mobile (≤ 420px) ── */
+@media (max-width: 420px) {
+  .hero-spotlight {
+    min-height: 350px;
+  }
+
+  .hero-title {
+    font-size: 22px;
+  }
+
+  .hero-actions-row {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .hero-btn-play,
+  .hero-btn-list {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .stream-card {
+    flex: 0 0 135px;
+    width: 135px;
+  }
+
+  .card-poster-wrapper {
+    height: 195px;
+  }
+
+  .posters-grid .card-poster-wrapper {
+    height: 195px;
+  }
+
+  .card-title {
+    font-size: 12px;
+  }
+}
+
+/* ── Ultra Small (≤ 360px) ── */
+@media (max-width: 360px) {
+  .hero-title {
+    font-size: 20px;
+  }
+
+  .stream-card {
+    flex: 0 0 125px;
+    width: 125px;
+  }
+
+  .card-poster-wrapper {
+    height: 180px;
+  }
+
+  .posters-grid .card-poster-wrapper {
+    height: 180px;
+  }
+}

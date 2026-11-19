@@ -1,0 +1,10 @@
+{
+  "appId": "com.igaradrama.app",
+  "appName": "IgaraDrama",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https",
+    "cleartext": true
+  }
+}
