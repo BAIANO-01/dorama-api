@@ -2,7 +2,14 @@
    IGARADRAMA — API SERVICE LAYER
    ========================================= */
 
-const API_BASE = '/api';
+const isNativeApp = typeof window !== 'undefined' && (
+  window.Capacitor?.isNativePlatform?.() ||
+  window.location.protocol === 'capacitor:' ||
+  (window.location.hostname === 'localhost' && !window.location.port)
+);
+
+const CLOUD_API = 'https://dorama-api.onrender.com/api';
+const API_BASE = isNativeApp ? CLOUD_API : (import.meta.env.VITE_API_URL || '/api');
 
 /** Verifica status do backend */
 export async function fetchHealth() {

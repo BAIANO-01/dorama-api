@@ -39,5 +39,34 @@
       "createdAt": "2026-11-19T04:10:31.356Z",
       "isTestAccount": true
     }
+  ],
+  [
+    "testevite@gmail.com",
+    {
+      "name": "Teste Vite",
+      "email": "testevite@gmail.com",
+      "password": "123",
+      "phone": "7491209137",
+      "role": "user",
+      "isVip": false,
+      "vipPlan": null,
+      "vipExpires": null,
+      "createdAt": "2026-11-19T04:29:43.564Z"
+    }
+  ],
+  [
+    "teste_6752@igaradrama.com",
+    {
+      "name": "Cliente Salvo Teste",
+      "email": "teste_6752@igaradrama.com",
+      "password": "teste6752",
+      "phone": "7491209137",
+      "role": "user",
+      "isVip": true,
+      "vipPlan": "Teste 3h",
+      "vipExpires": "2026-11-19T07:40:23.855Z",
+      "createdAt": "2026-11-19T04:40:23.855Z",
+      "isTestAccount": true
+    }
   ]
 ]

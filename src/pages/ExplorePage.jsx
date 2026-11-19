@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DramaCard from '../components/DramaCard';
 import { CardSkeleton } from '../components/Skeletons';
@@ -24,6 +24,16 @@ export default function ExplorePage({
   pageTitle,
 }) {
   const navigate = useNavigate();
+  const [displayCount, setDisplayCount] = useState(36);
+
+  // Reset pagination when genre or search term changes
+  useEffect(() => {
+    setDisplayCount(36);
+  }, [genre, query]);
+
+  const visibleItems = useMemo(() => {
+    return filtered.slice(0, displayCount);
+  }, [filtered, displayCount]);
 
   const openDrama = (d) => {
     navigate(`/drama/${d.id}`);
@@ -77,10 +87,22 @@ export default function ExplorePage({
       </div>
 
       <div className="posters-grid">
-        {filtered.map((d) => (
+        {visibleItems.map((d) => (
           <DramaCard key={d.id} drama={d} onClick={openDrama} />
         ))}
       </div>
+
+      {displayCount < filtered.length && (
+        <div style={{ textAlign: 'center', margin: '32px 0 20px' }}>
+          <button
+            className="btn-primary"
+            onClick={() => setDisplayCount((prev) => prev + 36)}
+            style={{ padding: '12px 28px', fontSize: '14px', borderRadius: '30px' }}
+          >
+            Carregar Mais Doramas ({filtered.length - displayCount} restantes) ➔
+          </button>
+        </div>
+      )}
 
       {!filtered.length && (
         <div className="empty-state">

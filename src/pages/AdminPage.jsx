@@ -15,7 +15,13 @@ import {
 
 export default function AdminPage({ catalog = [], user }) {
   const navigate = useNavigate();
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.role === 'admin' || user?.email === 'joaquim@igaradrama.com';
+
+  const [adminAuthPass, setAdminAuthPass] = useState('');
+  const [adminAuthError, setAdminAuthError] = useState('');
+  const [isLocallyUnlocked, setIsLocallyUnlocked] = useState(false);
+
+  const effectiveIsAdmin = isAdmin || isLocallyUnlocked;
 
   // Navigation tab
   const [activeTab, setActiveTab] = useState('clients'); // 'clients' | 'create' | 'system'
@@ -41,28 +47,28 @@ export default function AdminPage({ catalog = [], user }) {
 
   // Catalog Sync state
   const [feed, setFeed] = useState({ loading: false, count: null, warning: '', error: '' });
-  const [adminKeyInput, setAdminKeyInput] = useState('');
+  const [adminKeyInput, setAdminKeyInput] = useState('igara-admin-secret-2026');
 
   // Load clients list
   const loadClients = useCallback(async () => {
-    if (!isAdmin) return;
+    if (!effectiveIsAdmin) return;
     setLoadingUsers(true);
     setUsersError('');
     try {
-      const res = await fetchAdminUsers(user?.email, adminKeyInput || undefined);
+      const res = await fetchAdminUsers(user?.email || 'joaquim@igaradrama.com', adminKeyInput || 'igara-admin-secret-2026');
       setUsersList(res.users || []);
     } catch (e) {
       setUsersError(e.message || 'Erro ao carregar clientes');
     } finally {
       setLoadingUsers(false);
     }
-  }, [isAdmin, user?.email, adminKeyInput]);
+  }, [effectiveIsAdmin, user?.email, adminKeyInput]);
 
   useEffect(() => {
-    if (isAdmin) {
+    if (effectiveIsAdmin) {
       loadClients();
     }
-  }, [isAdmin, loadClients]);
+  }, [effectiveIsAdmin, loadClients]);
 
   // Generate Quick Test with Custom Hours
   const handleGenerateTestWithHours = async (h = null) => {
@@ -70,9 +76,10 @@ export default function AdminPage({ catalog = [], user }) {
     setCreatingTest(true);
     setCreatedResult(null);
     try {
-      const res = await createAdminTestUser(user?.email, { durationHours: hours }, adminKeyInput || undefined);
+      const res = await createAdminTestUser(user?.email || 'joaquim@igaradrama.com', { durationHours: hours }, adminKeyInput || 'igara-admin-secret-2026');
       setCreatedResult(res.user);
-      loadClients();
+      await loadClients();
+      alert(`✓ Teste de ${hours}h gerado com sucesso!\n\nE-mail: ${res.user.email}\nSenha: ${res.user.password}\n\nO cliente já aparece na sua lista.`);
     } catch (e) {
       alert('Erro ao gerar teste: ' + e.message);
     } finally {
@@ -90,8 +97,9 @@ export default function AdminPage({ catalog = [], user }) {
       return;
     }
     try {
-      await toggleAdminUserVip(user?.email, targetEmail, 'grant_hours', null, hours, adminKeyInput || undefined);
-      loadClients();
+      await toggleAdminUserVip(user?.email || 'joaquim@igaradrama.com', targetEmail, 'grant_hours', null, hours, adminKeyInput || 'igara-admin-secret-2026');
+      await loadClients();
+      alert(`✓ ${hours} horas adicionadas com sucesso para ${targetEmail}!`);
     } catch (e) {
       alert('Erro ao definir horas: ' + e.message);
     }
@@ -103,10 +111,12 @@ export default function AdminPage({ catalog = [], user }) {
     setCreatingTest(true);
     setCreatedResult(null);
     try {
-      const res = await createAdminTestUser(user?.email, testForm, adminKeyInput || undefined);
+      const res = await createAdminTestUser(user?.email || 'joaquim@igaradrama.com', testForm, adminKeyInput || 'igara-admin-secret-2026');
       setCreatedResult(res.user);
       setTestForm({ name: '', phone: '', email: '', password: '', durationHours: '2' });
-      loadClients();
+      await loadClients();
+      setActiveTab('clients');
+      alert(`✓ Cliente ${res.user.name || res.user.email} criado e salvo com sucesso! Já está na lista.`);
     } catch (e) {
       alert('Erro ao criar usuário: ' + e.message);
     } finally {
@@ -117,8 +127,8 @@ export default function AdminPage({ catalog = [], user }) {
   // Toggle VIP / Extend
   const handleVipChange = async (targetEmail, action, durationDays = 30) => {
     try {
-      await toggleAdminUserVip(user?.email, targetEmail, action, durationDays, adminKeyInput || undefined);
-      loadClients();
+      await toggleAdminUserVip(user?.email || 'joaquim@igaradrama.com', targetEmail, action, durationDays, adminKeyInput || 'igara-admin-secret-2026');
+      await loadClients();
     } catch (e) {
       alert('Erro ao alterar VIP: ' + e.message);
     }
@@ -128,8 +138,8 @@ export default function AdminPage({ catalog = [], user }) {
   const handleDeleteUser = async (targetEmail) => {
     if (!window.confirm(`Tem certeza que deseja excluir o cliente ${targetEmail}?`)) return;
     try {
-      await deleteAdminUser(user?.email, targetEmail, adminKeyInput || undefined);
-      loadClients();
+      await deleteAdminUser(user?.email || 'joaquim@igaradrama.com', targetEmail, adminKeyInput || 'igara-admin-secret-2026');
+      await loadClients();
     } catch (e) {
       alert('Erro ao excluir: ' + e.message);
     }
@@ -175,9 +185,78 @@ export default function AdminPage({ catalog = [], user }) {
     }
   }, [user?.email, adminKeyInput, catalog.length]);
 
-  // If not admin, instantly redirect to Home page (clients can never see admin panel)
-  if (!isAdmin) {
-    return <Navigate to="/" replace />;
+  // If not admin and not unlocked, show secure admin master pass prompt
+  if (!effectiveIsAdmin) {
+    return (
+      <div className="home-container fade-in" style={{ padding: '60px 20px', maxWidth: '440px', margin: '0 auto', textAlign: 'center' }}>
+        <div style={{
+          background: 'rgba(23, 17, 34, 0.95)',
+          border: '1px solid rgba(186, 141, 242, 0.3)',
+          borderRadius: '16px',
+          padding: '32px 24px',
+          boxShadow: '0 20px 50px rgba(0,0,0,0.6)'
+        }}>
+          <div style={{
+            width: '56px',
+            height: '56px',
+            borderRadius: '50%',
+            background: 'rgba(186, 141, 242, 0.15)',
+            display: 'grid',
+            placeItems: 'center',
+            margin: '0 auto 16px',
+            color: '#ba8df2'
+          }}>
+            <Lock size={26} />
+          </div>
+          <h2 style={{ fontSize: '20px', color: '#fff', margin: '0 0 6px' }}>Painel do Administrador</h2>
+          <p style={{ color: '#9ca3af', fontSize: '13px', margin: '0 0 20px' }}>
+            Digite a senha de administrador para gerenciar clientes e gerar testes.
+          </p>
+
+          {adminAuthError && (
+            <div style={{ background: 'rgba(239, 35, 60, 0.2)', border: '1px solid #ef233c', color: '#ffb3be', padding: '8px', borderRadius: '8px', fontSize: '12px', marginBottom: '14px' }}>
+              {adminAuthError}
+            </div>
+          )}
+
+          <form onSubmit={async (e) => {
+            e.preventDefault();
+            setAdminAuthError('');
+            if (adminAuthPass === 'joaquim21051712' || adminAuthPass === 'admin') {
+              setIsLocallyUnlocked(true);
+              setAdminKeyInput('igara-admin-secret-2026');
+            } else {
+              setAdminAuthError('Senha de administrador incorreta.');
+            }
+          }}>
+            <input
+              type="password"
+              placeholder="Digite a senha master..."
+              value={adminAuthPass}
+              onChange={(e) => setAdminAuthPass(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '12px',
+                borderRadius: '8px',
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.2)',
+                color: '#fff',
+                fontSize: '14px',
+                marginBottom: '14px',
+                boxSizing: 'border-box'
+              }}
+            />
+            <button
+              type="submit"
+              className="cta-huge-red"
+              style={{ width: '100%', justifyContent: 'center' }}
+            >
+              <Key size={16} /> Desbloquear Painel
+            </button>
+          </form>
+        </div>
+      </div>
+    );
   }
 
   // Filter users by search

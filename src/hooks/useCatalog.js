@@ -1,27 +1,50 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { fetchCatalog, fetchCatalogRaw } from '../services/api';
 
+let inMemoryCatalogCache = null;
+
 export function useCatalog() {
-  const [catalog, setCatalog] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [catalog, setCatalog] = useState(() => {
+    if (inMemoryCatalogCache && inMemoryCatalogCache.length) return inMemoryCatalogCache;
+    try {
+      const cached = sessionStorage.getItem('igara_catalog_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length) {
+          inMemoryCatalogCache = parsed;
+          return parsed;
+        }
+      }
+    } catch (_) {}
+    return [];
+  });
+  const [loading, setLoading] = useState(() => !catalog.length);
   const [error, setError] = useState('');
   const [query, setQuery] = useState('');
   const [genre, setGenre] = useState('Todos');
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
+    if (catalog.length > 0) {
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
 
     fetchCatalog()
       .then((data) => {
         if (cancelled) return;
         if (Array.isArray(data.items) && data.items.length) {
           setCatalog(data.items);
+          inMemoryCatalogCache = data.items;
+          try {
+            sessionStorage.setItem('igara_catalog_cache', JSON.stringify(data.items));
+          } catch (_) {}
         }
         setError('');
       })
       .catch((e) => {
-        if (!cancelled) setError(e.message);
+        if (!cancelled && !catalog.length) setError(e.message);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
