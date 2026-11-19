@@ -756,6 +756,21 @@ app.get('/api/stream/play', async (req, res) => {
   }
 
   // 4. Handle M3U8 HLS Playlist Streams
+  // If targetUrl is from a provider with open CORS (AnyReel, ReelShort, ChillShorts, NetShort),
+  // redirect directly over HTTPS! This allows Hls.js to resolve all sub-playlists and segments natively with 0 latency.
+  const openCorsHosts = [
+    'video.anyreel.app',
+    'v-mps.crazymaplestudios.com',
+    'app-dcdn-tos-prod.chillshorts.com',
+    'ns-aws-cdn.netshort.com'
+  ];
+  try {
+    const parsedTarget = new URL(targetUrl);
+    if (openCorsHosts.some(host => parsedTarget.hostname.includes(host)) || targetUrl.includes('anyreel')) {
+      return res.redirect(targetUrl.replace('http://', 'https://'));
+    }
+  } catch (_) {}
+
   try {
     const response = await fetch(targetUrl, { signal: AbortSignal.timeout(15000) });
     if (!response.ok) return res.status(response.status).send('Falha ao obter playlist m3u8');
@@ -773,7 +788,7 @@ app.get('/api/stream/play', async (req, res) => {
       if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
         segUrl = trimmed;
       } else {
-        segUrl = new URL(trimmed + search, basePath).toString();
+        segUrl = new URL(trimmed + (trimmed.includes('?') ? '' : search), basePath).toString();
       }
       return `/api/stream/segment?url=${encodeURIComponent(segUrl)}`;
     }).join('\n');
@@ -806,7 +821,32 @@ app.get('/api/stream/segment', async (req, res) => {
       return res.status(response.status).send('Falha ao obter segmento de vídeo');
     }
 
-    res.setHeader('Content-Type', response.headers.get('content-type') || 'video/mp2t');
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.includes('mpegurl') || targetUrl.includes('.m3u8')) {
+      const text = await response.text();
+      const parsedUrl = new URL(targetUrl);
+      const basePath = parsedUrl.origin + parsedUrl.pathname.substring(0, parsedUrl.pathname.lastIndexOf('/') + 1);
+      const search = parsedUrl.search;
+
+      const lines = text.split('\n');
+      const rewritten = lines.map(line => {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith('#')) return line;
+        let segUrl;
+        if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+          segUrl = trimmed;
+        } else {
+          segUrl = new URL(trimmed + (trimmed.includes('?') ? '' : search), basePath).toString();
+        }
+        return `/api/stream/segment?url=${encodeURIComponent(segUrl)}`;
+      }).join('\n');
+
+      res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      return res.send(rewritten);
+    }
+
+    res.setHeader('Content-Type', contentType || 'video/mp2t');
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
     res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Range, Accept-Ranges');
@@ -877,7 +917,7 @@ if (fs.existsSync(distPath)) {
 }
 
 const port = Number(process.env.PORT) || 3333;
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {
   const total = getMergedCatalog().length;
-  console.log(`IgaraDrama API ativa em http://localhost:${port} [Catálogo: ${total} Doramas | DramaSDK Live Conectado]`);
+  console.log(`IgaraDrama API ativa em http://0.0.0.0:${port} [Catálogo: ${total} Doramas | DramaSDK Live Conectado]`);
 });
