@@ -2,7 +2,9 @@ node_modules
 dist
 .env
 *.log
-android/
 *.backup
 .DS_Store
 Thumbs.db
+android/.gradle
+android/build
+android/app/build

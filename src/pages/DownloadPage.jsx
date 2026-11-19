@@ -43,14 +43,19 @@ export default function DownloadPage() {
           </p>
 
           <div className="download-quick-actions">
-            <button className="cta-huge-red" onClick={handleInstallClick}>
+            <a
+              href="https://github.com/BAIANO-01/dorama-api/releases/download/apk-latest/app-debug.apk"
+              className="cta-huge-red"
+              style={{ textDecoration: 'none' }}
+              download
+            >
               <Download size={18} />
-              <span>{isInstalled ? 'Aplicativo Instalado ✓' : 'Instalar no Celular Agora'}</span>
-            </button>
-            <a href="#test-qr" className="btn-secondary" style={{ textDecoration: 'none' }}>
-              <QrCode size={18} />
-              <span>Testar no Celular (QR Code)</span>
+              <span>Baixar APK Direto (.apk)</span>
             </a>
+            <button className="btn-secondary" onClick={handleInstallClick}>
+              <Smartphone size={18} />
+              <span>{isInstalled ? 'App Instalado ✓' : 'Instalar pelo Navegador (PWA)'}</span>
+            </button>
           </div>
 
           {installedMsg && (

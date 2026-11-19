@@ -70,16 +70,9 @@ try {
   console.error('Erro ao ler catalog-pt.json:', e.message);
 }
 
-// In-memory merged catalog: Prioritize Portuguese dublado catalog first
+// In-memory catalog: 100% real titles from DramaSDK API
 function getMergedCatalog() {
-  const merged = [...persistedCatalog];
-  const seenTitles = new Set(persistedCatalog.map(d => d.title.toLowerCase().trim()));
-  for (const item of dramaSdkCatalog) {
-    if (!seenTitles.has(item.title.toLowerCase().trim())) {
-      merged.push(item);
-    }
-  }
-  return merged;
+  return dramaSdkCatalog;
 }
 
 const catalogCache = new Map();
@@ -513,7 +506,9 @@ app.get('/api/episodes/:id', async (req, res) => {
                 type: videoType
               },
               videoType,
-              streamUrl: `/api/stream/play?storyId=${encodeURIComponent(sourceStoryId)}&provider=${encodeURIComponent(provider)}&ep=${epNum}&type=${videoType}`,
+              streamUrl: ep.video_url 
+                ? `/api/stream/play?url=${encodeURIComponent(ep.video_url)}&storyId=${encodeURIComponent(sourceStoryId)}&provider=${encodeURIComponent(provider)}&ep=${epNum}&type=${videoType}`
+                : `/api/stream/play?storyId=${encodeURIComponent(sourceStoryId)}&provider=${encodeURIComponent(provider)}&ep=${epNum}&type=${videoType}`,
               directVideoUrl: ep.video_url,
               isVipOnly: epNum > 3
             };
@@ -681,10 +676,18 @@ app.get('/api/stream/play', async (req, res) => {
         'Accept': 'application/json'
       };
 
-      const streamRes = await fetch(`${dramaSdkBase}/api/stream?bookId=${encodeURIComponent(storyId)}&episode=${epNum}&provider=${encodeURIComponent(provider)}`, {
+      const cleanBookId = String(storyId).includes(':') ? String(storyId).split(':')[1] : String(storyId);
+      let streamRes = await fetch(`${dramaSdkBase}/api/stream?bookId=${encodeURIComponent(cleanBookId)}&episode=${epNum}&provider=${encodeURIComponent(provider)}`, {
         headers: dramaSdkHeaders,
         signal: AbortSignal.timeout(12000)
       });
+
+      if (!streamRes.ok && cleanBookId !== String(storyId)) {
+        streamRes = await fetch(`${dramaSdkBase}/api/stream?bookId=${encodeURIComponent(storyId)}&episode=${epNum}&provider=${encodeURIComponent(provider)}`, {
+          headers: dramaSdkHeaders,
+          signal: AbortSignal.timeout(12000)
+        });
+      }
 
       if (streamRes.ok) {
         const streamData = await streamRes.json();
