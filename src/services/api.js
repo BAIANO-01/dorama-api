@@ -139,11 +139,11 @@ export async function login(email, password) {
 }
 
 /** Cadastro */
-export async function register(name, email, password) {
+export async function register(name, email, password, phone) {
   const res = await fetch(`${API_BASE}/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, email, password }),
+    body: JSON.stringify({ name, email, password, phone }),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Erro no cadastro');

@@ -44,12 +44,16 @@ function AppRoutes() {
 
   // Auth handlers that navigate after success
   const onLogin = useCallback(async (email, password) => {
-    await handleLogin(email, password);
-    navigate('/');
+    const loggedUser = await handleLogin(email, password);
+    if (loggedUser?.role === 'admin') {
+      navigate('/admin');
+    } else {
+      navigate('/');
+    }
   }, [handleLogin, navigate]);
 
-  const onRegister = useCallback(async (name, email, password) => {
-    await handleRegister(name, email, password);
+  const onRegister = useCallback(async (name, email, password, phone) => {
+    await handleRegister(name, email, password, phone);
     navigate('/');
   }, [handleRegister, navigate]);
 

@@ -50,8 +50,8 @@ export function useAuth() {
     return loggedUser;
   }, [setUser]);
 
-  const handleRegister = useCallback(async (name, email, password) => {
-    const data = await api.register(name, email, password);
+  const handleRegister = useCallback(async (name, email, password, phone) => {
+    const data = await api.register(name, email, password, phone);
     const newUser = data.user;
     setUser(newUser);
     setIsVip(false);

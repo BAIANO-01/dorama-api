@@ -2,7 +2,7 @@
   [
     "joaquim@igaradrama.com",
     {
-      "name": "Joaquim (Administrador)",
+      "name": "Joaquim",
       "email": "joaquim@igaradrama.com",
       "password": "joaquim21051712",
       "role": "admin",
@@ -10,19 +10,6 @@
       "vipPlan": "annual",
       "vipExpires": "2099-12-31T23:59:59.999Z",
       "createdAt": "2026-11-19T03:48:00.000Z"
-    }
-  ],
-  [
-    "admin@igaradrama.com",
-    {
-      "name": "Administrador IgaraDrama",
-      "email": "admin@igaradrama.com",
-      "password": "admin",
-      "role": "admin",
-      "isVip": true,
-      "vipPlan": "annual",
-      "vipExpires": "2027-11-19T03:39:04.107Z",
-      "createdAt": "2026-11-19T03:39:04.108Z"
     }
   ],
   [
@@ -39,16 +26,17 @@
     }
   ],
   [
-    "teste_6544@igaradrama.com",
+    "teste_1392@igaradrama.com",
     {
-      "name": "Cliente Teste #6544",
-      "email": "teste_6544@igaradrama.com",
-      "password": "teste6544",
+      "name": "Cliente WhatsApp Teste",
+      "email": "teste_1392@igaradrama.com",
+      "password": "teste1392",
+      "phone": "7491209137",
       "role": "user",
       "isVip": true,
-      "vipPlan": "Teste 4h",
-      "vipExpires": "2026-11-19T07:45:49.554Z",
-      "createdAt": "2026-11-19T03:45:49.554Z",
+      "vipPlan": "Teste 2h",
+      "vipExpires": "2026-11-19T06:10:31.354Z",
+      "createdAt": "2026-11-19T04:10:31.356Z",
       "isTestAccount": true
     }
   ]

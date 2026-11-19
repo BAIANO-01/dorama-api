@@ -30,6 +30,14 @@ export default function WatchPage({ catalog = [], user, isVip, addToHistory }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [error, setError] = useState('');
   const [isVipBlocked, setIsVipBlocked] = useState(false);
+  const [nextDramaToast, setNextDramaToast] = useState(null);
+  const endedTriggeredRef = useRef(false);
+
+  // Reset autoplay flag when drama or episode changes
+  useEffect(() => {
+    endedTriggeredRef.current = false;
+    setNextDramaToast(null);
+  }, [id, ep]);
 
   // Track history
   useEffect(() => {
@@ -212,11 +220,37 @@ export default function WatchPage({ catalog = [], user, isVip, addToHistory }) {
     };
   }, [currentEpNum, currentEpisodeData, loadingEps, isCurrentEpVip, isVip, user?.email, resetControlsTimer]);
 
+  const handleAdvance = useCallback(() => {
+    if (hasNext) {
+      goToEpisode(currentEpNum + 1);
+    } else {
+      // Last episode of current drama! Find next drama in catalog
+      const currentIdx = catalog.findIndex(d => String(d.id) === String(drama?.id));
+      if (currentIdx >= 0 && catalog.length > 1) {
+        const nextDrama = catalog[(currentIdx + 1) % catalog.length];
+        if (nextDrama) {
+          setNextDramaToast(nextDrama.title);
+          setTimeout(() => {
+            navigate(`/watch/${nextDrama.id}/1`);
+          }, 1400);
+        }
+      }
+    }
+  }, [hasNext, goToEpisode, currentEpNum, catalog, drama, navigate]);
+
   // Video event handlers
   const handleTimeUpdate = () => {
     if (videoRef.current) {
-      setCurrentTime(videoRef.current.currentTime);
-      setDuration(videoRef.current.duration || 0);
+      const cur = videoRef.current.currentTime;
+      const dur = videoRef.current.duration || 0;
+      setCurrentTime(cur);
+      setDuration(dur);
+
+      // Auto Advance when episode ends (reliable trigger for mobile HLS)
+      if (dur > 2 && cur >= dur - 0.5 && !endedTriggeredRef.current) {
+        endedTriggeredRef.current = true;
+        handleAdvance();
+      }
     }
   };
 
@@ -305,7 +339,12 @@ export default function WatchPage({ catalog = [], user, isVip, addToHistory }) {
         playsInline
         autoPlay
         onTimeUpdate={handleTimeUpdate}
-        onEnded={() => { if (hasNext) goToEpisode(currentEpNum + 1); }}
+        onEnded={() => {
+          if (!endedTriggeredRef.current) {
+            endedTriggeredRef.current = true;
+            handleAdvance();
+          }
+        }}
         onClick={togglePlay}
       />
 
@@ -404,7 +443,7 @@ export default function WatchPage({ catalog = [], user, isVip, addToHistory }) {
                 onClick={togglePlay}
                 aria-label={isPlaying ? 'Pausar' : 'Reproduzir'}
               >
-                {isPlaying ? <Pause size={20} /> : <Play size={20} fill="currentColor" />}
+                {isPlaying ? <Pause size={18} /> : <Play size={18} fill="currentColor" />}
               </button>
 
               <button
@@ -412,6 +451,7 @@ export default function WatchPage({ catalog = [], user, isVip, addToHistory }) {
                 disabled={!hasPrev}
                 onClick={() => goToEpisode(currentEpNum - 1)}
                 title="Episódio Anterior"
+                aria-label="Episódio Anterior"
               >
                 <SkipBack size={18} />
                 <span className="desktop-only">Anterior</span>
@@ -420,8 +460,9 @@ export default function WatchPage({ catalog = [], user, isVip, addToHistory }) {
               <button
                 className="watch-nav-btn"
                 disabled={!hasNext}
-                onClick={() => goToEpisode(currentEpNum + 1)}
+                onClick={() => handleAdvance()}
                 title="Próximo Episódio"
+                aria-label="Próximo Episódio"
               >
                 <span className="desktop-only">Próximo</span>
                 <SkipForward size={18} />
@@ -432,22 +473,53 @@ export default function WatchPage({ catalog = [], user, isVip, addToHistory }) {
               <button
                 className="watch-drawer-toggle-btn"
                 onClick={() => setDrawerOpen(true)}
+                title="Lista de episódios"
               >
-                <List size={18} />
-                <span>Episódios ({currentEpNum}/{episodes.length || drama.eps || 25})</span>
+                <List size={16} />
+                <span>
+                  <span className="mobile-only">{currentEpNum}/{episodes.length || drama.eps || 25}</span>
+                  <span className="desktop-only">Episódios ({currentEpNum}/{episodes.length || drama.eps || 25})</span>
+                </span>
               </button>
 
               <button className="watch-icon-btn" onClick={toggleMute} aria-label="Mudo">
-                {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+                {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
               </button>
 
               <button className="watch-icon-btn" onClick={toggleFullscreen} aria-label="Tela cheia">
-                <Maximize size={20} />
+                <Maximize size={18} />
               </button>
             </div>
           </div>
         </div>
       </div>
+
+      {/* ── AUTO NEXT DRAMA TOAST ── */}
+      {nextDramaToast && (
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          background: 'rgba(20, 16, 28, 0.95)',
+          border: '1px solid rgba(186, 141, 242, 0.6)',
+          borderRadius: '16px',
+          padding: '20px 28px',
+          textAlign: 'center',
+          color: '#fff',
+          zIndex: 40,
+          boxShadow: '0 15px 40px rgba(0, 0, 0, 0.85)',
+          backdropFilter: 'blur(10px)',
+          animation: 'fade-in 0.3s ease'
+        }}>
+          <div style={{ color: '#4ade80', fontSize: '13px', fontWeight: 800, marginBottom: '6px' }}>
+            ✓ ÚLTIMO EPISÓDIO FINALIZADO!
+          </div>
+          <div style={{ fontSize: '16px', fontWeight: 800, marginBottom: '4px' }}>Iniciando Próximo Dorama:</div>
+          <div style={{ color: '#ba8df2', fontSize: '14px', fontWeight: 600 }}>{nextDramaToast}</div>
+          <div style={{ color: '#9ca3af', fontSize: '11px', marginTop: '10px' }}>Carregando Episódio 1...</div>
+        </div>
+      )}
 
       {/* ── EPISODES BOTTOM SHEET / DRAWER ── */}
       <div className={`watch-episodes-sheet-backdrop ${drawerOpen ? 'open' : ''}`} onClick={() => setDrawerOpen(false)} />

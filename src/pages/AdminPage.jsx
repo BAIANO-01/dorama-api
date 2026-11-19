@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import {
   Film, ShieldCheck, RefreshCw, Lock, AlertTriangle, User,
   Users, UserPlus, Zap, Clock, Check, Copy, Trash2, Key,
-  Sparkles, CheckCircle, ExternalLink, Search, Crown
+  Sparkles, CheckCircle, ExternalLink, Search, Crown, Phone, MessageCircle
 } from 'lucide-react';
 import {
   syncAdminCatalog,
@@ -31,6 +31,7 @@ export default function AdminPage({ catalog = [], user }) {
   const [customHoursInput, setCustomHoursInput] = useState('2');
   const [testForm, setTestForm] = useState({
     name: '',
+    phone: '',
     email: '',
     password: '',
     durationHours: '2'
@@ -104,7 +105,7 @@ export default function AdminPage({ catalog = [], user }) {
     try {
       const res = await createAdminTestUser(user?.email, testForm, adminKeyInput || undefined);
       setCreatedResult(res.user);
-      setTestForm({ name: '', email: '', password: '', durationHours: '24' });
+      setTestForm({ name: '', phone: '', email: '', password: '', durationHours: '2' });
       loadClients();
     } catch (e) {
       alert('Erro ao criar usuário: ' + e.message);
@@ -134,13 +135,22 @@ export default function AdminPage({ catalog = [], user }) {
     }
   };
 
-  // Copy credentials message for WhatsApp
+  // Copy credentials message for WhatsApp or open directly if phone is present
   const copyWhatsAppMsg = (u, customMsg = null) => {
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://igaradrama.com';
-    const msg = customMsg || `🎬 *SEU ACESSO AO IGARADRAMA VIP* 🎬\n\nOlá ${u.name || 'Cliente'}! Segue o seu acesso oficial liberado:\n\n🌐 *Site:* ${origin}\n👤 *E-mail:* ${u.email}\n🔑 *Senha:* ${u.password}\n⭐ *Plano:* ${u.vipPlan || 'Acesso VIP'}\n📅 *Válido até:* ${u.vipExpires ? new Date(u.vipExpires).toLocaleString('pt-BR') : 'Sem expiração'}\n\nAssista a mais de 1.100 Doramas Dublados em Português no celular e no computador! Aproveite! ✨`;
+    const msg = customMsg || `🎬 *SEU ACESSO AO IGARADRAMA VIP* 🎬\n\nOlá ${u.name || 'Cliente'}! Segue o seu acesso oficial liberado:\n\n🌐 *Site Oficial:* ${origin}\n👤 *E-mail:* ${u.email}\n🔑 *Senha:* ${u.password}\n⭐ *Plano:* ${u.vipPlan || 'Acesso VIP'}\n📅 *Válido até:* ${u.vipExpires ? new Date(u.vipExpires).toLocaleString('pt-BR') : 'Sem expiração'}\n\n💬 *WhatsApp Oficial IgaraDrama:* +55 74 9120-9137\nAssista a mais de 1.100 Doramas Dublados em Português no seu celular e no computador! Aproveite! ✨`;
 
     navigator.clipboard.writeText(msg);
     setCopiedId(u.email);
+
+    // If client has phone registered, open WhatsApp directly
+    const rawPhone = (u.phone || '').replace(/\D/g, '');
+    if (rawPhone.length >= 10) {
+      const fullPhone = rawPhone.startsWith('55') ? rawPhone : `55${rawPhone}`;
+      const waUrl = `https://wa.me/${fullPhone}?text=${encodeURIComponent(msg)}`;
+      window.open(waUrl, '_blank');
+    }
+
     setTimeout(() => setCopiedId(null), 3000);
   };
 
@@ -165,53 +175,9 @@ export default function AdminPage({ catalog = [], user }) {
     }
   }, [user?.email, adminKeyInput, catalog.length]);
 
-  // If not admin, render Security Blocked screen
+  // If not admin, instantly redirect to Home page (clients can never see admin panel)
   if (!isAdmin) {
-    return (
-      <div className="home-container fade-in">
-        <div className="empty-state" style={{ padding: '80px 20px', maxWidth: '540px', margin: '0 auto' }}>
-          <div style={{
-            width: '64px',
-            height: '64px',
-            borderRadius: '50%',
-            background: 'rgba(239, 35, 60, 0.15)',
-            border: '1px solid rgba(239, 35, 60, 0.4)',
-            display: 'grid',
-            placeItems: 'center',
-            color: '#ff4d6d',
-            marginBottom: '16px'
-          }}>
-            <Lock size={30} />
-          </div>
-          <h2 style={{ fontSize: '24px', color: '#fff', margin: '0 0 8px' }}>Área Administrativa Protegida</h2>
-          <p style={{ color: '#d1b4bc', fontSize: '14px', lineHeight: 1.6, margin: '0 0 24px' }}>
-            Para gerenciar clientes, criar acessos de teste e sincronizar o catálogo, você precisa estar autenticado como administrador.
-          </p>
-
-          <div style={{
-            background: 'rgba(255,255,255,0.05)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: '12px',
-            padding: '16px',
-            marginBottom: '24px',
-            textAlign: 'left'
-          }}>
-            <div style={{ fontSize: '12px', color: '#ba8df2', fontWeight: 600, marginBottom: '6px' }}>SEU ACESSO DE ADMINISTRADOR MASTER:</div>
-            <div style={{ fontSize: '14px', color: '#fff' }}><strong>E-mail:</strong> joaquim@igaradrama.com</div>
-            <div style={{ fontSize: '14px', color: '#fff' }}><strong>Senha:</strong> joaquim21051712</div>
-          </div>
-
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
-            <button className="btn-primary" onClick={() => navigate('/auth')}>
-              <User size={16} /> Fazer Login como Admin
-            </button>
-            <button className="btn-secondary" onClick={() => navigate('/')}>
-              Voltar ao Início
-            </button>
-          </div>
-        </div>
-      </div>
-    );
+    return <Navigate to="/" replace />;
   }
 
   // Filter users by search
@@ -228,8 +194,24 @@ export default function AdminPage({ catalog = [], user }) {
     <div className="home-container fade-in" style={{ paddingBottom: '60px' }}>
       {/* Top Header */}
       <div className="page-heading">
-        <div className="eyebrow" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Crown size={14} color="#ffea79" /> PAINEL DO ADMINISTRADOR · IGARADRAMA
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+          <div className="eyebrow" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Crown size={14} color="#ffea79" /> PAINEL DO ADMINISTRADOR · IGARADRAMA
+          </div>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            background: 'rgba(34, 197, 94, 0.15)',
+            border: '1px solid rgba(34, 197, 94, 0.4)',
+            color: '#4ade80',
+            padding: '5px 12px',
+            borderRadius: '8px',
+            fontSize: '12px',
+            fontWeight: 700
+          }}>
+            <Phone size={13} /> WhatsApp Oficial: +55 74 9120-9137
+          </div>
         </div>
         <h2>Gestão de Clientes & Testes VIP</h2>
         <p>Gere testes rápidos para enviar no WhatsApp dos clientes e controle todos os acessos em tempo real.</p>
@@ -457,7 +439,7 @@ export default function AdminPage({ catalog = [], user }) {
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#9ca3af' }}>
-                    <th style={{ padding: '12px 10px' }}>Cliente / E-mail</th>
+                    <th style={{ padding: '12px 10px' }}>Cliente / WhatsApp</th>
                     <th style={{ padding: '12px 10px' }}>Senha</th>
                     <th style={{ padding: '12px 10px' }}>Status VIP</th>
                     <th style={{ padding: '12px 10px' }}>Vencimento</th>
@@ -469,12 +451,19 @@ export default function AdminPage({ catalog = [], user }) {
                     const isVipActive = u.isVip;
                     return (
                       <tr key={u.email} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                        {/* Name & Email */}
+                        {/* Name & Email & WhatsApp */}
                         <td style={{ padding: '14px 10px' }}>
                           <div style={{ color: '#fff', fontWeight: 600 }}>{u.name || 'Cliente'}</div>
                           <div style={{ color: '#9ca3af', fontSize: '12px' }}>{u.email}</div>
+                          {u.phone ? (
+                            <div style={{ color: '#4ade80', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px', fontWeight: 600 }}>
+                              <Phone size={11} /> {u.phone}
+                            </div>
+                          ) : (
+                            <div style={{ color: '#6b7280', fontSize: '11px', marginTop: '2px' }}>Sem WhatsApp</div>
+                          )}
                           {u.role === 'admin' && (
-                            <span style={{ fontSize: '10px', background: 'rgba(186, 141, 242, 0.2)', color: '#ba8df2', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>ADMIN</span>
+                            <span style={{ fontSize: '10px', background: 'rgba(186, 141, 242, 0.2)', color: '#ba8df2', padding: '2px 6px', borderRadius: '4px', fontWeight: 600, display: 'inline-block', marginTop: '3px' }}>ADMIN</span>
                           )}
                         </td>
 
@@ -527,15 +516,24 @@ export default function AdminPage({ catalog = [], user }) {
                         {/* Actions */}
                         <td style={{ padding: '14px 10px', textAlign: 'right' }}>
                           <div style={{ display: 'inline-flex', gap: '6px', alignItems: 'center' }}>
-                            {/* Copy WhatsApp */}
+                            {/* Copy / Send WhatsApp */}
                             <button
                               onClick={() => copyWhatsAppMsg(u)}
                               className="btn-secondary"
-                              style={{ padding: '6px 10px', fontSize: '11px' }}
-                              title="Copiar mensagem com login para enviar no WhatsApp"
+                              style={{
+                                padding: '6px 10px',
+                                fontSize: '11px',
+                                borderColor: 'rgba(34, 197, 94, 0.4)',
+                                color: '#4ade80',
+                                background: 'rgba(34, 197, 94, 0.08)',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                              }}
+                              title={u.phone ? `Abrir WhatsApp para ${u.phone} e enviar acesso` : "Copiar mensagem de acesso"}
                             >
-                              {copiedId === u.email ? <Check size={12} color="#4ade80" /> : <Copy size={12} />}
-                              <span>{copiedId === u.email ? 'Copiado!' : 'WhatsApp'}</span>
+                              {copiedId === u.email ? <Check size={12} color="#4ade80" /> : <MessageCircle size={12} />}
+                              <span>{copiedId === u.email ? 'Enviando...' : (u.phone ? 'Enviar Whats' : 'WhatsApp')}</span>
                             </button>
 
                             {/* Set Custom Hours button */}
@@ -625,6 +623,27 @@ export default function AdminPage({ catalog = [], user }) {
                 placeholder="Ex: João da Silva (ou deixe em branco p/ gerar auto)"
                 value={testForm.name}
                 onChange={(e) => setTestForm({ ...testForm, name: e.target.value })}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  color: '#fff',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '13px', color: '#d1b4bc', marginBottom: '6px' }}>
+                WhatsApp / Celular do Cliente (com DDD):
+              </label>
+              <input
+                type="tel"
+                placeholder="Ex: (74) 9120-9137 ou 74991209137"
+                value={testForm.phone}
+                onChange={(e) => setTestForm({ ...testForm, phone: e.target.value })}
                 style={{
                   width: '100%',
                   padding: '12px',

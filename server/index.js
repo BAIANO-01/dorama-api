@@ -104,12 +104,12 @@ function loadUsersDb() {
     console.error('Erro ao ler users-db.json:', e.message);
   }
 
-  // Master admin emails
-  const ADMIN_EMAILS = new Set(['admin@igaradrama.com', 'joaquim@igaradrama.com']);
+  // Master admin email
+  const ADMIN_EMAILS = new Set(['joaquim@igaradrama.com']);
 
-  // Always ensure default admin, Joaquim master admin and demo visitor exist
+  // Always ensure Joaquim master admin and demo visitor exist
   usersDb.set('joaquim@igaradrama.com', {
-    name: 'Joaquim (Administrador)',
+    name: 'Joaquim',
     email: 'joaquim@igaradrama.com',
     password: 'joaquim21051712',
     role: 'admin',
@@ -119,18 +119,8 @@ function loadUsersDb() {
     createdAt: usersDb.get('joaquim@igaradrama.com')?.createdAt || new Date().toISOString()
   });
 
-  if (!usersDb.has('admin@igaradrama.com')) {
-    usersDb.set('admin@igaradrama.com', {
-      name: 'Administrador IgaraDrama',
-      email: 'admin@igaradrama.com',
-      password: 'admin',
-      role: 'admin',
-      isVip: true,
-      vipPlan: 'annual',
-      vipExpires: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-      createdAt: new Date().toISOString()
-    });
-  }
+  // Remove legacy admin if present
+  usersDb.delete('admin@igaradrama.com');
   if (!usersDb.has('visitante@igaradrama.com')) {
     usersDb.set('visitante@igaradrama.com', {
       name: 'Visitante IgaraDrama',
@@ -231,7 +221,7 @@ app.get('/api/auth/me', (req, res) => {
 });
 
 app.post('/api/auth/register', (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, phone } = req.body;
   if (!email || !password || !name) {
     return res.status(400).json({ error: 'Preencha nome, e-mail e senha.' });
   }
@@ -244,7 +234,8 @@ app.post('/api/auth/register', (req, res) => {
     name: String(name).trim(),
     email: cleanEmail,
     password: String(password),
-    role: (cleanEmail === 'admin@igaradrama.com' || cleanEmail === 'joaquim@igaradrama.com') ? 'admin' : 'user',
+    phone: String(phone || '').trim(),
+    role: cleanEmail === 'joaquim@igaradrama.com' ? 'admin' : 'user',
     isVip: false,
     vipPlan: null,
     vipExpires: null,
@@ -252,6 +243,7 @@ app.post('/api/auth/register', (req, res) => {
   };
 
   usersDb.set(cleanEmail, user);
+  saveUsersDb();
   const { password: _, ...userSafe } = user;
   res.json({ ok: true, user: userSafe });
 });
@@ -269,7 +261,7 @@ app.post('/api/auth/login', (req, res) => {
       name: cleanEmail.split('@')[0],
       email: cleanEmail,
       password: String(password),
-      role: (cleanEmail === 'admin@igaradrama.com' || cleanEmail === 'joaquim@igaradrama.com') ? 'admin' : 'user',
+      role: cleanEmail === 'joaquim@igaradrama.com' ? 'admin' : 'user',
       isVip: false,
       vipPlan: null,
       vipExpires: null,
@@ -506,6 +498,7 @@ app.get('/api/admin/users', requireAdmin, (_req, res) => {
     return {
       name: u.name,
       email: u.email,
+      phone: u.phone || '',
       role: u.role,
       isVip: !!u.isVip,
       vipPlan: u.vipPlan,
@@ -521,11 +514,12 @@ app.get('/api/admin/users', requireAdmin, (_req, res) => {
 
 // Admin: Create test user with 1-click or custom duration
 app.post('/api/admin/create-test', requireAdmin, (req, res) => {
-  const { name, email, password, durationHours = 24 } = req.body;
+  const { name, email, password, phone, durationHours = 24 } = req.body;
   const numId = Math.floor(1000 + Math.random() * 9000);
   const clientEmail = (email || `teste_${numId}@igaradrama.com`).trim().toLowerCase();
   const clientPass = String(password || `teste${numId}`).trim();
   const clientName = (name || `Cliente Teste #${numId}`).trim();
+  const clientPhone = String(phone || '').trim();
 
   const hours = Number(durationHours) || 24;
   const expiresDate = new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
@@ -540,6 +534,7 @@ app.post('/api/admin/create-test', requireAdmin, (req, res) => {
     name: clientName,
     email: clientEmail,
     password: clientPass,
+    phone: clientPhone,
     role: 'user',
     isVip: true,
     vipPlan: planName,
@@ -556,6 +551,7 @@ app.post('/api/admin/create-test', requireAdmin, (req, res) => {
     user: {
       name: user.name,
       email: user.email,
+      phone: user.phone,
       password: user.password,
       vipExpires: user.vipExpires,
       vipPlan: user.vipPlan
@@ -595,7 +591,7 @@ app.post('/api/admin/toggle-vip', requireAdmin, (req, res) => {
 // Admin: Delete a user
 app.delete('/api/admin/user/:email', requireAdmin, (req, res) => {
   const email = String(req.params.email || '').trim().toLowerCase();
-  if (email === 'admin@igaradrama.com' || email === 'joaquim@igaradrama.com') {
+  if (email === 'joaquim@igaradrama.com') {
     return res.status(400).json({ error: 'Não é permitido excluir a conta de administrador.' });
   }
   if (!usersDb.has(email)) return res.status(404).json({ error: 'Usuário não encontrado.' });

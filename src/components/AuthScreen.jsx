@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import {
-  User, Mail, Lock, Eye, EyeOff, LogOut, Crown, Film, ShieldCheck
+  User, Mail, Lock, Eye, EyeOff, LogOut, Crown, Film, ShieldCheck, Phone
 } from 'lucide-react';
 
 export default function AuthScreen({ user, isVip, onLogin, onRegister, onGuestLogin, onLogout, onGoSubscription }) {
   const [tab, setTab] = useState('login');
   const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
@@ -21,7 +22,7 @@ export default function AuthScreen({ user, isVip, onLogin, onRegister, onGuestLo
       if (tab === 'login') {
         await onLogin(email, password);
       } else {
-        await onRegister(name, email, password);
+        await onRegister(name, email, password, phone);
       }
     } catch (err) {
       setMsg({ text: err.message, isError: true });
@@ -128,13 +129,29 @@ export default function AuthScreen({ user, isVip, onLogin, onRegister, onGuestLo
 
         <form className="auth-form" onSubmit={handleSubmit}>
           {tab === 'register' && (
-            <div className="input-field-group">
-              <label>Nome Completo</label>
-              <div className="input-with-icon">
-                <User size={16} />
-                <input type="text" required placeholder="Seu nome completo" value={name} onChange={(e) => setName(e.target.value)} />
+            <>
+              <div className="input-field-group">
+                <label>Nome Completo</label>
+                <div className="input-with-icon">
+                  <User size={16} />
+                  <input type="text" required placeholder="Seu nome completo" value={name} onChange={(e) => setName(e.target.value)} />
+                </div>
               </div>
-            </div>
+
+              <div className="input-field-group">
+                <label>WhatsApp / Celular com DDD</label>
+                <div className="input-with-icon">
+                  <Phone size={16} color="#22c55e" />
+                  <input
+                    type="tel"
+                    required
+                    placeholder="(74) 9120-9137"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                  />
+                </div>
+              </div>
+            </>
           )}
 
           <div className="input-field-group">

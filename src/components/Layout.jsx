@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
-  Home, Compass, Flame, Heart, Clock, User, Crown, Settings, Menu, Search, X, LogOut, ChevronDown, Smartphone, Download
+  Home, Compass, Flame, Heart, Clock, User, Crown, Settings, Menu, Search, X, LogOut, ChevronDown, Smartphone, Download, Phone
 } from 'lucide-react';
 
 const NAV_LINKS = [
@@ -200,10 +200,14 @@ export default function Layout({
                   <button className="dropdown-item" onClick={() => go('/download')}>
                     <Smartphone size={16} color="#ba8df2" /> Baixar App no Celular
                   </button>
-                  <div className="dropdown-divider" />
-                  <button className="dropdown-item text-muted" onClick={() => go('/admin')}>
-                    <Settings size={15} /> Painel de Integração (Admin)
-                  </button>
+                  {user?.role === 'admin' && (
+                    <>
+                      <div className="dropdown-divider" />
+                      <button className="dropdown-item text-muted" onClick={() => go('/admin')}>
+                        <Settings size={15} /> Painel de Administração
+                      </button>
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -263,9 +267,22 @@ export default function Layout({
           <button className="drawer-link" onClick={() => go('/auth')}>
             <User size={18} /> {user ? 'Minha Conta' : 'Entrar / Cadastro'}
           </button>
-          <button className="drawer-link text-dim" onClick={() => go('/admin')}>
-            <Settings size={18} /> Painel de Integração
-          </button>
+          {user?.role === 'admin' && (
+            <button className="drawer-link text-dim" onClick={() => go('/admin')}>
+              <Settings size={18} /> Painel de Administração
+            </button>
+          )}
+
+          <div className="drawer-section-label">SUPORTE</div>
+          <a
+            href="https://wa.me/557491209137?text=Ol%C3%A1%2C%20preciso%20de%20ajuda%20com%20o%20IgaraDrama"
+            target="_blank"
+            rel="noreferrer"
+            className="drawer-link"
+            style={{ color: '#4ade80', textDecoration: 'none' }}
+          >
+            <Phone size={18} /> WhatsApp: (74) 9120-9137
+          </a>
         </div>
       </aside>
 
@@ -297,11 +314,25 @@ export default function Layout({
               <button onClick={() => go('/favorites')}>Minha Lista</button>
               <button onClick={() => go('/history')}>Histórico</button>
             </div>
+            <div>
+              <strong>Suporte Oficial</strong>
+              <a
+                href="https://wa.me/557491209137?text=Ol%C3%A1%2C%20preciso%20de%20ajuda%20com%20o%20IgaraDrama"
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: '#4ade80', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', textDecoration: 'none', margin: '4px 0' }}
+              >
+                <Phone size={14} /> +55 74 9120-9137
+              </a>
+              <small style={{ color: '#9ca3af', fontSize: '11px' }}>Atendimento e Dúvidas VIP</small>
+            </div>
           </div>
         </div>
         <div className="footer-bottom">
           <span>© 2026 IgaraDrama · Streaming Licenciado em Alta Definição · {catalogCount} Doramas</span>
-          <button className="footer-admin-link" onClick={() => go('/admin')}>Área Técnica</button>
+          {user?.role === 'admin' && (
+            <button className="footer-admin-link" onClick={() => go('/admin')}>Área Administrativa</button>
+          )}
         </div>
       </footer>
 
