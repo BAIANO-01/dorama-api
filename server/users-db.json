@@ -1,0 +1,42 @@
+[
+  [
+    "admin@igaradrama.com",
+    {
+      "name": "Administrador IgaraDrama",
+      "email": "admin@igaradrama.com",
+      "password": "admin",
+      "role": "admin",
+      "isVip": true,
+      "vipPlan": "annual",
+      "vipExpires": "2027-11-19T03:39:04.107Z",
+      "createdAt": "2026-11-19T03:39:04.108Z"
+    }
+  ],
+  [
+    "visitante@igaradrama.com",
+    {
+      "name": "Visitante IgaraDrama",
+      "email": "visitante@igaradrama.com",
+      "password": "123",
+      "role": "user",
+      "isVip": false,
+      "vipPlan": null,
+      "vipExpires": null,
+      "createdAt": "2026-11-19T03:39:04.108Z"
+    }
+  ],
+  [
+    "teste_6544@igaradrama.com",
+    {
+      "name": "Cliente Teste #6544",
+      "email": "teste_6544@igaradrama.com",
+      "password": "teste6544",
+      "role": "user",
+      "isVip": true,
+      "vipPlan": "Teste 4h",
+      "vipExpires": "2026-11-19T07:45:49.554Z",
+      "createdAt": "2026-11-19T03:45:49.554Z",
+      "isTestAccount": true
+    }
+  ]
+]

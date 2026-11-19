@@ -79,29 +79,59 @@ const catalogCache = new Map();
 const episodesCache = new Map();
 const paymentsCache = new Map();
 
-// Users DB with roles and VIP timestamps
-const usersDb = new Map([
-  ['admin@igaradrama.com', {
-    name: 'Administrador IgaraDrama',
-    email: 'admin@igaradrama.com',
-    password: 'admin',
-    role: 'admin',
-    isVip: true,
-    vipPlan: 'annual',
-    vipExpires: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-    createdAt: new Date().toISOString()
-  }],
-  ['visitante@igaradrama.com', {
-    name: 'Visitante IgaraDrama',
-    email: 'visitante@igaradrama.com',
-    password: '123',
-    role: 'user',
-    isVip: false,
-    vipPlan: null,
-    vipExpires: null,
-    createdAt: new Date().toISOString()
-  }]
-]);
+// Users DB with persistent storage, roles and VIP timestamps
+const usersDbFile = path.join(__dirname, 'users-db.json');
+const usersDb = new Map();
+
+function saveUsersDb() {
+  try {
+    const list = Array.from(usersDb.entries());
+    fs.writeFileSync(usersDbFile, JSON.stringify(list, null, 2), 'utf8');
+  } catch (e) {
+    console.error('Erro ao salvar users-db.json:', e.message);
+  }
+}
+
+function loadUsersDb() {
+  try {
+    if (fs.existsSync(usersDbFile)) {
+      const list = JSON.parse(fs.readFileSync(usersDbFile, 'utf8'));
+      for (const [email, u] of list) {
+        usersDb.set(email, u);
+      }
+    }
+  } catch (e) {
+    console.error('Erro ao ler users-db.json:', e.message);
+  }
+
+  // Always ensure default admin and demo visitor exist
+  if (!usersDb.has('admin@igaradrama.com')) {
+    usersDb.set('admin@igaradrama.com', {
+      name: 'Administrador IgaraDrama',
+      email: 'admin@igaradrama.com',
+      password: 'admin',
+      role: 'admin',
+      isVip: true,
+      vipPlan: 'annual',
+      vipExpires: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+      createdAt: new Date().toISOString()
+    });
+  }
+  if (!usersDb.has('visitante@igaradrama.com')) {
+    usersDb.set('visitante@igaradrama.com', {
+      name: 'Visitante IgaraDrama',
+      email: 'visitante@igaradrama.com',
+      password: '123',
+      role: 'user',
+      isVip: false,
+      vipPlan: null,
+      vipExpires: null,
+      createdAt: new Date().toISOString()
+    });
+  }
+  saveUsersDb();
+}
+loadUsersDb();
 
 // Helper: Check and synchronize VIP expiration on server
 function checkVipStatus(user) {
@@ -453,6 +483,111 @@ app.post('/api/admin/sync', requireAdmin, async (_req, res) => {
   } catch (e) {
     res.status(500).json({ error: 'Erro ao sincronizar catálogo DramaSDK: ' + e.message });
   }
+});
+
+// Admin: List all clients
+app.get('/api/admin/users', requireAdmin, (_req, res) => {
+  const users = Array.from(usersDb.values()).map(u => {
+    checkVipStatus(u);
+    return {
+      name: u.name,
+      email: u.email,
+      role: u.role,
+      isVip: !!u.isVip,
+      vipPlan: u.vipPlan,
+      vipExpires: u.vipExpires,
+      createdAt: u.createdAt,
+      password: u.password, // Raw password visible to admin to send to client
+      isTestAccount: !!u.isTestAccount
+    };
+  });
+  users.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+  res.json({ ok: true, users });
+});
+
+// Admin: Create test user with 1-click or custom duration
+app.post('/api/admin/create-test', requireAdmin, (req, res) => {
+  const { name, email, password, durationHours = 24 } = req.body;
+  const numId = Math.floor(1000 + Math.random() * 9000);
+  const clientEmail = (email || `teste_${numId}@igaradrama.com`).trim().toLowerCase();
+  const clientPass = String(password || `teste${numId}`).trim();
+  const clientName = (name || `Cliente Teste #${numId}`).trim();
+
+  const hours = Number(durationHours) || 24;
+  const expiresDate = new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
+
+  let planName = `Teste ${hours}h`;
+  if (hours === 24) planName = 'Teste 24 Horas';
+  else if (hours === 48) planName = 'Teste 48 Horas';
+  else if (hours === 72) planName = 'Teste 3 Dias';
+  else if (hours >= 168) planName = 'Teste 7 Dias';
+
+  const user = {
+    name: clientName,
+    email: clientEmail,
+    password: clientPass,
+    role: 'user',
+    isVip: true,
+    vipPlan: planName,
+    vipExpires: expiresDate,
+    createdAt: new Date().toISOString(),
+    isTestAccount: true
+  };
+
+  usersDb.set(clientEmail, user);
+  saveUsersDb();
+
+  res.json({
+    ok: true,
+    user: {
+      name: user.name,
+      email: user.email,
+      password: user.password,
+      vipExpires: user.vipExpires,
+      vipPlan: user.vipPlan
+    },
+    message: `Conta de teste criada com sucesso! Válida até ${new Date(expiresDate).toLocaleString('pt-BR')}`
+  });
+});
+
+// Admin: Toggle or change VIP duration
+app.post('/api/admin/toggle-vip', requireAdmin, (req, res) => {
+  const { email, action, durationDays, durationHours } = req.body;
+  const cleanEmail = String(email || '').trim().toLowerCase();
+  const user = usersDb.get(cleanEmail);
+  if (!user) return res.status(404).json({ error: 'Usuário não encontrado.' });
+
+  if (action === 'revoke') {
+    user.isVip = false;
+    user.vipPlan = null;
+    user.vipExpires = null;
+  } else if (durationHours) {
+    const hours = Number(durationHours) || 2;
+    user.isVip = true;
+    user.vipPlan = `Teste ${hours}h`;
+    user.vipExpires = new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
+    user.isTestAccount = true;
+  } else {
+    const days = Number(durationDays || 30);
+    user.isVip = true;
+    user.vipPlan = days >= 365 ? 'Anual VIP' : (days >= 30 ? 'Mensal VIP' : `VIP ${days} Dias`);
+    user.vipExpires = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+  }
+
+  saveUsersDb();
+  res.json({ ok: true, user: { email: user.email, isVip: user.isVip, vipPlan: user.vipPlan, vipExpires: user.vipExpires } });
+});
+
+// Admin: Delete a user
+app.delete('/api/admin/user/:email', requireAdmin, (req, res) => {
+  const email = String(req.params.email || '').trim().toLowerCase();
+  if (email === 'admin@igaradrama.com') {
+    return res.status(400).json({ error: 'Não é permitido excluir a conta de administrador.' });
+  }
+  if (!usersDb.has(email)) return res.status(404).json({ error: 'Usuário não encontrado.' });
+  usersDb.delete(email);
+  saveUsersDb();
+  res.json({ ok: true, message: `Cliente ${email} removido com sucesso.` });
 });
 
 /* =========================================

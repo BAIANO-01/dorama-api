@@ -55,6 +55,66 @@ export async function syncAdminCatalog(email, adminKey) {
   return data;
 }
 
+/** Gerenciamento de Usuários e Clientes no Admin */
+export async function fetchAdminUsers(userEmail, adminKey) {
+  const headers = {};
+  if (userEmail) headers['x-user-email'] = userEmail;
+  if (adminKey) headers['x-admin-key'] = adminKey;
+  const res = await fetch(`${API_BASE}/admin/users`, { headers });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Erro ao carregar clientes');
+  }
+  return res.json();
+}
+
+export async function createAdminTestUser(userEmail, data, adminKey) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (userEmail) headers['x-user-email'] = userEmail;
+  if (adminKey) headers['x-admin-key'] = adminKey;
+  const res = await fetch(`${API_BASE}/admin/create-test`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Erro ao criar teste');
+  }
+  return res.json();
+}
+
+export async function toggleAdminUserVip(userEmail, targetEmail, action, durationDays, durationHours, adminKey) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (userEmail) headers['x-user-email'] = userEmail;
+  if (adminKey) headers['x-admin-key'] = adminKey;
+  const res = await fetch(`${API_BASE}/admin/toggle-vip`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ email: targetEmail, action, durationDays, durationHours })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Erro ao atualizar VIP');
+  }
+  return res.json();
+}
+
+export async function deleteAdminUser(userEmail, targetEmail, adminKey) {
+  const headers = {};
+  if (userEmail) headers['x-user-email'] = userEmail;
+  if (adminKey) headers['x-admin-key'] = adminKey;
+  const res = await fetch(`${API_BASE}/admin/user/${encodeURIComponent(targetEmail)}`, {
+    method: 'DELETE',
+    headers
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Erro ao excluir usuário');
+  }
+  return res.json();
+}
+
 /** Busca episódios de uma série */
 export async function fetchEpisodes(rawId, lang = 'pt') {
   const cleanId = String(rawId).replace(/^shortmax-/, '');
