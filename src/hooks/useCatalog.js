@@ -37,7 +37,8 @@ export function useCatalog() {
 
   const filtered = useMemo(() => {
     return catalog.filter((d) => {
-      const matchGenre = genre === 'Todos' || d.genre === genre;
+      const matchGenre = genre === 'Todos' ||
+        (genre === 'Dublado' ? (d.isDubbedPt || d.tag === 'DUBLADO PT-BR') : d.genre === genre);
       const matchQuery = !query ||
         `${d.title} ${d.genre} ${d.desc || ''}`.toLowerCase().includes(query.toLowerCase());
       return matchGenre && matchQuery;

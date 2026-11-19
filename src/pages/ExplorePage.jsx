@@ -4,14 +4,14 @@ import DramaCard from '../components/DramaCard';
 import { CardSkeleton } from '../components/Skeletons';
 
 const CURATED_EXPLORE_GENRES = [
+  { id: 'Dublado', label: '🇧🇷 Dublados PT-BR' },
   { id: 'Todos', label: '🔥 Todos' },
-  { id: 'Casa nobre', label: '👑 Casa Nobre' },
-  { id: 'Lobisomem', label: '🐺 Lobisomem' },
-  { id: 'Chefe', label: '💼 Chefes & Romance' },
-  { id: 'Vingança', label: '⚡ Vingança & Revidar' },
-  { id: 'Drama', label: '🎭 Drama' },
-  { id: 'Família', label: '❤️ Família' },
-  { id: 'Juventude', label: '✨ Juventude' },
+  { id: 'Máfia', label: '🔫 Máfia & Dons' },
+  { id: 'Bilionários', label: '👑 Bilionários' },
+  { id: 'Vingança', label: '⚡ Vingança' },
+  { id: 'Romance', label: '❤️ Romance' },
+  { id: 'Família', label: '👨‍👩‍👧 Família' },
+  { id: 'Fantasia', label: '✨ Fantasia' },
 ];
 
 export default function ExplorePage({
@@ -31,8 +31,8 @@ export default function ExplorePage({
 
   const getGenreCount = (gId) => {
     if (gId === 'Todos') return catalog.length;
+    if (gId === 'Dublado') return catalog.filter(d => d.isDubbedPt || d.tag === 'DUBLADO PT-BR').length;
     if (gId === 'Vingança') return catalog.filter(d => d.genre === 'Vingança' || d.genre === 'revidar').length;
-    if (gId === 'Lobisomem') return catalog.filter(d => d.genre === 'Lobisomem' || d.genre === 'Fantasia' || d.genre === 'Fantasia na lenda').length;
     return catalog.filter(d => d.genre === gId).length;
   };
 

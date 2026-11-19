@@ -8,14 +8,14 @@ import { HeroSkeleton, CardSkeleton } from '../components/Skeletons';
 
 // Curated high-impact streaming categories from DramaSDK
 const STREAMING_CATEGORIES = [
+  { id: 'Dublado', label: '🇧🇷 Dublados em Português', queryKey: 'Dublado' },
   { id: 'Todos', label: '🔥 Todos os Doramas', queryKey: 'Todos' },
-  { id: 'Bilionários', label: '👑 Bilionários & CEOs', queryKey: 'Bilionários' },
+  { id: 'Bilionários', label: '👑 Bilionários & Máfia', queryKey: 'Bilionários' },
   { id: 'Vingança', label: '⚡ Vingança & Traição', queryKey: 'Vingança' },
   { id: 'Romance', label: '❤️ Romance & Paixão', queryKey: 'Romance' },
+  { id: 'FlickReels', label: '🍿 FlickReels (Dublados)', queryKey: 'flickreels' },
   { id: 'ReelShort', label: '🎬 ReelShort', queryKey: 'reelshort' },
   { id: 'AnyReel', label: '💎 AnyReel', queryKey: 'anyreel' },
-  { id: 'FlickReels', label: '🍿 FlickReels', queryKey: 'flickreels' },
-  { id: 'GoodShort', label: '⭐ GoodShort', queryKey: 'goodshort' },
 ];
 
 export default function HomePage({
@@ -79,9 +79,16 @@ export default function HomePage({
     // 2. GÊNEROS E PROVEDORES REAIS DRAMASDK
     const genreRows = [
       {
-        title: '👑 Bilionários, CEOs & Grandes Impérios',
-        subtitle: 'Magnatas poderosos, casamentos por conveniência e amores secretos',
-        matches: d => (d.genre && (d.genre.includes('Bilionário') || d.genre.includes('CEO') || d.genre.includes('Identidade') || d.genre.includes('Millionaire'))),
+        title: '🇧🇷 100% Dublados em Português (Brasil)',
+        subtitle: 'Séries completas com dublagem profissional e áudio em português brasileiro',
+        matches: d => d.isDubbedPt || d.tag === 'DUBLADO PT-BR',
+        key: 'dublados-pt',
+        exploreKey: 'Dublado',
+      },
+      {
+        title: '👑 Bilionários, Máfia & Grandes Impérios',
+        subtitle: 'Don poderosos, casamentos por conveniência e amores secretos',
+        matches: d => (d.genre && (d.genre.includes('Bilionário') || d.genre.includes('Máfia') || d.genre.includes('CEO') || d.genre.includes('Identidade'))),
         key: 'bilionarios',
         exploreKey: 'Bilionários',
       },
