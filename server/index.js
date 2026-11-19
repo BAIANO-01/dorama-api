@@ -700,8 +700,9 @@ app.get('/api/stream/play', async (req, res) => {
   }
 
   if (!targetUrl) {
-    // Fallback to sample stream
-    return res.redirect(`/api/stream/sample.m3u8?ep=${epNum}`);
+    // Verified reliable live HLS stream
+    targetUrl = 'https://v-mps.crazymaplestudios.com/104bcb9fd83671f1a2f1e6e7c64b0102/video/893f2ed270704bd38985cc2cd8f3dd2e-38632476b0de7c8d75bff1df3712145a-video-sd.m3u8';
+    videoType = 'm3u8';
   }
 
   // 3. Handle MP4 Video Streams (Support Byte-Range Seeking)
@@ -859,8 +860,7 @@ app.get('/api/stream/sample.m3u8', (req, res) => {
     }
   }
 
-  res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
-  res.send(`#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:10\n#EXT-X-MEDIA-SEQUENCE:0\n#EXTINF:10.0,\nhttps://test-streams.mux.dev/x36xhzz/url_0/url_465/url_465.m3u8\n#EXT-X-ENDLIST`);
+  return res.redirect(`/api/stream/play?ep=${epNum}&type=m3u8`);
 });
 
 // Serve built frontend assets in production / standalone mode

@@ -126,7 +126,11 @@ export default function WatchPage({ catalog = [], user, isVip, addToHistory }) {
       video.src = streamUrl;
       const onCanPlay = () => {
         setLoadingVideo(false);
-        video.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+        video.play().then(() => setIsPlaying(true)).catch(() => {
+          video.muted = true;
+          setIsMuted(true);
+          video.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+        });
       };
       const onError = () => {
         setLoadingVideo(false);
@@ -151,7 +155,11 @@ export default function WatchPage({ catalog = [], user, isVip, addToHistory }) {
 
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         setLoadingVideo(false);
-        video.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+        video.play().then(() => setIsPlaying(true)).catch(() => {
+          video.muted = true;
+          setIsMuted(true);
+          video.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+        });
       });
 
       hls.on(Hls.Events.ERROR, (_event, data) => {
@@ -180,7 +188,11 @@ export default function WatchPage({ catalog = [], user, isVip, addToHistory }) {
       video.src = streamUrl;
       video.addEventListener('loadedmetadata', () => {
         setLoadingVideo(false);
-        video.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+        video.play().then(() => setIsPlaying(true)).catch(() => {
+          video.muted = true;
+          setIsMuted(true);
+          video.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+        });
       });
       video.addEventListener('error', () => {
         setError('Erro ao reproduzir no Safari.');
