@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: igaradrama
+    runtime: node
+    plan: free
+    region: oregon
+    branch: main
+    buildCommand: npm install && npm run build
+    startCommand: node server/index.js
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: DRAMASDK_BASE_URL
+        value: https://sdk.dramasdk.com
+      - key: DRAMASDK_TOKEN
+        value: mdr_live_lfNVEhpfmU8JfnjvP6FlyNNOUQY_aAPR
+      - key: DRAMASDK_APP_ID
+        value: 1b8982f1-1fc6-48f9-98ae-7b322939f830
+      - key: DRAMASDK_PACKAGE_ID
+        value: com.igaradrama.app
+      - key: MERCADOPAGO_ACCESS_TOKEN
+        value: APP_USR-8063605523500577-040704-76bcbb74887a6fe761c070f1367fc6ab-1995158909
+      - key: MERCADOPAGO_PUBLIC_KEY
+        value: APP_USR-b1e86b22-2c55-4392-952b-988ed211391b
+      - key: CONTENT_LICENSE_CONFIRMED
+        value: "true"
