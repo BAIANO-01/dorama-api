@@ -126,6 +126,7 @@ function AppRoutes() {
         <Route path="/watch/:id/:ep" element={
           <WatchPage
             catalog={catalog}
+            catalogLoading={loading}
             user={user}
             isVip={isVip}
             addToHistory={addToHistory}
@@ -134,6 +135,7 @@ function AppRoutes() {
         <Route path="/watch/:id" element={
           <WatchPage
             catalog={catalog}
+            catalogLoading={loading}
             user={user}
             isVip={isVip}
             addToHistory={addToHistory}

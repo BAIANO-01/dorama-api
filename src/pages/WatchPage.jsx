@@ -2,16 +2,31 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Play, Pause, SkipBack, SkipForward, List, Crown,
-  Volume2, VolumeX, Maximize, X, CheckCircle, ShieldCheck
+  Volume2, VolumeX, Maximize, X, ShieldCheck
 } from 'lucide-react';
 import Hls from 'hls.js';
 import { fetchEpisodes } from '../services/api';
 
-export default function WatchPage({ catalog = [], user, isVip, addToHistory }) {
+const isNativeApp = typeof window !== 'undefined' && (
+  window.Capacitor?.isNativePlatform?.() ||
+  window.location.protocol === 'capacitor:' ||
+  (window.location.hostname === 'localhost' && !window.location.port)
+);
+
+function resolveStreamUrl(url) {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  if (url.startsWith('/api') && isNativeApp) {
+    return `https://dorama-api.onrender.com${url}`;
+  }
+  return url;
+}
+
+export default function WatchPage({ catalog = [], catalogLoading = false, user, isVip, addToHistory }) {
   const { id, ep } = useParams();
   const navigate = useNavigate();
 
-  const drama = catalog.find(d => d.id === id) || null;
+  const drama = catalog.find(d => String(d.id) === String(id)) || null;
   const currentEpNum = parseInt(ep || '1', 10);
 
   const videoRef = useRef(null);
@@ -19,6 +34,7 @@ export default function WatchPage({ catalog = [], user, isVip, addToHistory }) {
   const containerRef = useRef(null);
   const controlsTimeoutRef = useRef(null);
 
+  const [dramaInfo, setDramaInfo] = useState(null);
   const [episodes, setEpisodes] = useState([]);
   const [loadingEps, setLoadingEps] = useState(true);
   const [loadingVideo, setLoadingVideo] = useState(true);
@@ -41,37 +57,38 @@ export default function WatchPage({ catalog = [], user, isVip, addToHistory }) {
 
   // Track history
   useEffect(() => {
-    if (drama && addToHistory) {
-      addToHistory(drama.id);
+    if (id && addToHistory) {
+      addToHistory(id);
     }
-  }, [drama, addToHistory]);
+  }, [id, addToHistory]);
 
-  // Load episodes from APIShort
+  // Load episodes from DramaSDK / API
   useEffect(() => {
-    if (!drama) return;
-    const rawId = drama.rawId || String(drama.id).replace(/^shortmax-/, '');
+    const rawId = drama?.rawId || id;
     if (!rawId) return;
 
     setLoadingEps(true);
     fetchEpisodes(rawId)
       .then((data) => {
-        if (Array.isArray(data.episodes) && data.episodes.length) {
-          setEpisodes(data.episodes);
-        } else {
-          // Fallback
-          const count = drama.eps || 25;
-          setEpisodes(Array.from({ length: count }, (_, i) => ({
-            id: i + 1,
-            episode: i + 1,
-            duration: 90,
-            streamUrl: `/api/stream/sample.m3u8?ep=${i + 1}`,
-            isVipOnly: i >= 3
-          })));
+        if (data) {
+          setDramaInfo(data);
+          if (Array.isArray(data.episodes) && data.episodes.length) {
+            setEpisodes(data.episodes);
+          } else {
+            const count = drama?.eps || data.totalEpisodes || 25;
+            setEpisodes(Array.from({ length: count }, (_, i) => ({
+              id: i + 1,
+              episode: i + 1,
+              duration: 90,
+              streamUrl: `/api/stream/sample.m3u8?ep=${i + 1}`,
+              isVipOnly: i >= 3
+            })));
+          }
         }
       })
       .catch((err) => {
         console.error('Erro ao buscar episódios:', err);
-        const count = drama.eps || 25;
+        const count = drama?.eps || 25;
         setEpisodes(Array.from({ length: count }, (_, i) => ({
           id: i + 1,
           episode: i + 1,
@@ -81,12 +98,47 @@ export default function WatchPage({ catalog = [], user, isVip, addToHistory }) {
         })));
       })
       .finally(() => setLoadingEps(false));
-  }, [drama]);
+  }, [drama, id]);
 
   const currentEpisodeData = episodes.find(e => e.episode === currentEpNum) || episodes[currentEpNum - 1] || null;
   const isCurrentEpVip = currentEpisodeData ? currentEpisodeData.isVipOnly : currentEpNum > 3;
 
-  // Auto-hide controls after 4 seconds of inactivity
+  const totalEpCount = episodes.length || drama?.eps || dramaInfo?.totalEpisodes || 25;
+  const hasPrev = currentEpNum > 1;
+  const hasNext = episodes.length ? currentEpNum < episodes.length : currentEpNum < totalEpCount;
+
+  // Navigate to specific episode
+  const goToEpisode = useCallback((epNumber) => {
+    const epData = episodes.find(x => x.episode === epNumber);
+    const isTargetVip = epData ? epData.isVipOnly : epNumber > 3;
+    if (isTargetVip && !isVip) {
+      navigate('/vip');
+      return;
+    }
+    setDrawerOpen(false);
+    navigate(`/watch/${drama?.id || id}/${epNumber}`);
+  }, [episodes, isVip, navigate, drama?.id, id]);
+
+  // Auto-advance to next episode or next drama
+  const handleAdvance = useCallback(() => {
+    if (hasNext) {
+      goToEpisode(currentEpNum + 1);
+    } else {
+      // Last episode of current drama! Find next drama in catalog
+      const currentIdx = catalog.findIndex(d => String(d.id) === String(drama?.id || id));
+      if (currentIdx >= 0 && catalog.length > 1) {
+        const nextDrama = catalog[(currentIdx + 1) % catalog.length];
+        if (nextDrama) {
+          setNextDramaToast(nextDrama.title);
+          setTimeout(() => {
+            navigate(`/watch/${nextDrama.id}/1`);
+          }, 1400);
+        }
+      }
+    }
+  }, [hasNext, goToEpisode, currentEpNum, catalog, drama?.id, id, navigate]);
+
+  // Auto-hide controls after 3.8 seconds of inactivity
   const resetControlsTimer = useCallback(() => {
     setShowControls(true);
     if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
@@ -116,10 +168,11 @@ export default function WatchPage({ catalog = [], user, isVip, addToHistory }) {
     const video = videoRef.current;
     if (!video) return;
 
-    let streamUrl = currentEpisodeData?.streamUrl || `/api/stream/sample.m3u8?ep=${currentEpNum}`;
-    if (user?.email && !streamUrl.includes('user=')) {
-      streamUrl += `${streamUrl.includes('?') ? '&' : '?'}user=${encodeURIComponent(user.email)}`;
+    let rawStreamUrl = currentEpisodeData?.streamUrl || `/api/stream/sample.m3u8?ep=${currentEpNum}`;
+    if (user?.email && !rawStreamUrl.includes('user=')) {
+      rawStreamUrl += `${rawStreamUrl.includes('?') ? '&' : '?'}user=${encodeURIComponent(user.email)}`;
     }
+    const streamUrl = resolveStreamUrl(rawStreamUrl);
 
     const isMp4 = currentEpisodeData?.videoType === 'mp4' || 
                   (currentEpisodeData?.video?.type === 'mp4') ||
@@ -132,25 +185,26 @@ export default function WatchPage({ catalog = [], user, isVip, addToHistory }) {
         hlsRef.current = null;
       }
       video.src = streamUrl;
-      const onCanPlay = () => {
+      video.play().then(() => {
+        setIsPlaying(true);
         setLoadingVideo(false);
-        video.play().then(() => setIsPlaying(true)).catch(() => {
-          video.muted = true;
-          setIsMuted(true);
-          video.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+      }).catch(() => {
+        video.muted = true;
+        setIsMuted(true);
+        video.play().then(() => {
+          setIsPlaying(true);
+          setLoadingVideo(false);
+        }).catch(() => {
+          setIsPlaying(false);
+          setLoadingVideo(false);
         });
-      };
-      const onError = () => {
-        setLoadingVideo(false);
-        setError('Erro ao reproduzir o vídeo. Tente novamente.');
-      };
-      video.addEventListener('canplay', onCanPlay, { once: true });
-      video.addEventListener('error', onError, { once: true });
+      });
     } else if (Hls.isSupported()) {
       if (hlsRef.current) hlsRef.current.destroy();
       const hls = new Hls({
         enableWorker: true,
         lowLatencyMode: true,
+        backBufferLength: 90,
         xhrSetup: (xhr) => {
           if (user?.email) {
             xhr.setRequestHeader('X-User-Email', user.email);
@@ -163,7 +217,9 @@ export default function WatchPage({ catalog = [], user, isVip, addToHistory }) {
 
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         setLoadingVideo(false);
-        video.play().then(() => setIsPlaying(true)).catch(() => {
+        video.play().then(() => {
+          setIsPlaying(true);
+        }).catch(() => {
           video.muted = true;
           setIsMuted(true);
           video.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
@@ -186,24 +242,41 @@ export default function WatchPage({ catalog = [], user, isVip, addToHistory }) {
               hls.recoverMediaError();
               break;
             default:
+              console.warn('[HLS Fatal]:', data);
               hls.destroy();
-              setError('Erro ao carregar o fluxo de vídeo.');
+              const fallbackUrl = currentEpisodeData?.directVideoUrl || streamUrl;
+              if (fallbackUrl && fallbackUrl !== video.src) {
+                video.src = resolveStreamUrl(fallbackUrl);
+                video.play().then(() => {
+                  setLoadingVideo(false);
+                  setIsPlaying(true);
+                }).catch(() => {
+                  setLoadingVideo(false);
+                  setError('Erro ao reproduzir o vídeo. Toque em Tentar Novamente.');
+                });
+              } else {
+                setLoadingVideo(false);
+                setError('Erro ao reproduzir o vídeo. Toque em Tentar Novamente.');
+              }
               break;
           }
         }
       });
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
       video.src = streamUrl;
-      video.addEventListener('loadedmetadata', () => {
+      video.play().then(() => {
+        setIsPlaying(true);
         setLoadingVideo(false);
-        video.play().then(() => setIsPlaying(true)).catch(() => {
-          video.muted = true;
-          setIsMuted(true);
-          video.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+      }).catch(() => {
+        video.muted = true;
+        setIsMuted(true);
+        video.play().then(() => {
+          setIsPlaying(true);
+          setLoadingVideo(false);
+        }).catch(() => {
+          setIsPlaying(false);
+          setLoadingVideo(false);
         });
-      });
-      video.addEventListener('error', () => {
-        setError('Erro ao reproduzir no Safari.');
       });
     } else {
       setError('Navegador incompatível com HLS.');
@@ -220,24 +293,6 @@ export default function WatchPage({ catalog = [], user, isVip, addToHistory }) {
     };
   }, [currentEpNum, currentEpisodeData, loadingEps, isCurrentEpVip, isVip, user?.email, resetControlsTimer]);
 
-  const handleAdvance = useCallback(() => {
-    if (hasNext) {
-      goToEpisode(currentEpNum + 1);
-    } else {
-      // Last episode of current drama! Find next drama in catalog
-      const currentIdx = catalog.findIndex(d => String(d.id) === String(drama?.id));
-      if (currentIdx >= 0 && catalog.length > 1) {
-        const nextDrama = catalog[(currentIdx + 1) % catalog.length];
-        if (nextDrama) {
-          setNextDramaToast(nextDrama.title);
-          setTimeout(() => {
-            navigate(`/watch/${nextDrama.id}/1`);
-          }, 1400);
-        }
-      }
-    }
-  }, [hasNext, goToEpisode, currentEpNum, catalog, drama, navigate]);
-
   // Video event handlers
   const handleTimeUpdate = () => {
     if (videoRef.current) {
@@ -246,7 +301,7 @@ export default function WatchPage({ catalog = [], user, isVip, addToHistory }) {
       setCurrentTime(cur);
       setDuration(dur);
 
-      // Auto Advance when episode ends (reliable trigger for mobile HLS)
+      // Auto Advance when episode ends
       if (dur > 2 && cur >= dur - 0.5 && !endedTriggeredRef.current) {
         endedTriggeredRef.current = true;
         handleAdvance();
@@ -284,20 +339,6 @@ export default function WatchPage({ catalog = [], user, isVip, addToHistory }) {
     resetControlsTimer();
   };
 
-  const goToEpisode = (epNumber) => {
-    const epData = episodes.find(x => x.episode === epNumber);
-    const isTargetVip = epData ? epData.isVipOnly : epNumber > 3;
-    if (isTargetVip && !isVip) {
-      navigate('/vip');
-      return;
-    }
-    setDrawerOpen(false);
-    navigate(`/watch/${drama.id}/${epNumber}`);
-  };
-
-  const hasPrev = currentEpNum > 1;
-  const hasNext = episodes.length ? currentEpNum < episodes.length : currentEpNum < (drama?.eps || 25);
-
   const formatTime = (secs) => {
     if (!secs || isNaN(secs)) return '0:00';
     const m = Math.floor(secs / 60);
@@ -314,7 +355,20 @@ export default function WatchPage({ catalog = [], user, isVip, addToHistory }) {
     }
   };
 
-  if (!drama) {
+  const currentTitle = drama?.title || dramaInfo?.name || 'Dorama';
+
+  if (!drama && !dramaInfo && (catalogLoading || loadingEps)) {
+    return (
+      <div className="watch-page-container">
+        <div className="watch-loading-overlay">
+          <div className="loading-spinner" />
+          <p>Carregando Dorama...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!drama && !dramaInfo && !loadingEps && episodes.length === 0) {
     return (
       <div className="watch-page-container">
         <div className="empty-state">
@@ -337,8 +391,27 @@ export default function WatchPage({ catalog = [], user, isVip, addToHistory }) {
         ref={videoRef}
         className="watch-video-player"
         playsInline
+        webkit-playsinline="true"
+        x5-playsinline="true"
         autoPlay
+        preload="auto"
         onTimeUpdate={handleTimeUpdate}
+        onLoadedData={() => setLoadingVideo(false)}
+        onCanPlay={() => setLoadingVideo(false)}
+        onPlaying={() => {
+          setLoadingVideo(false);
+          setIsPlaying(true);
+        }}
+        onWaiting={() => setLoadingVideo(true)}
+        onError={() => {
+          if (currentEpisodeData?.directVideoUrl && videoRef.current?.src !== currentEpisodeData.directVideoUrl) {
+            videoRef.current.src = resolveStreamUrl(currentEpisodeData.directVideoUrl);
+            videoRef.current.play().catch(() => {});
+          } else {
+            setLoadingVideo(false);
+            setError('Erro ao carregar o vídeo. Toque para recarregar.');
+          }
+        }}
         onEnded={() => {
           if (!endedTriggeredRef.current) {
             endedTriggeredRef.current = true;
@@ -370,14 +443,14 @@ export default function WatchPage({ catalog = [], user, isVip, addToHistory }) {
           <Crown size={52} color="#ffea79" />
           <h2>Conteúdo Exclusivo VIP</h2>
           <p>
-            Os primeiros episódios de <strong>{drama.title}</strong> são de degustação gratuita.
+            Os primeiros episódios de <strong>{currentTitle}</strong> são de degustação gratuita.
             Assine o <strong>IgaraDrama VIP</strong> para desbloquear todos os episódios completos em alta definição!
           </p>
           <div className="watch-vip-actions">
             <button className="cta-huge-red" onClick={() => navigate('/vip')}>
               <Crown size={20} /> Assinar VIP Ilimitado
             </button>
-            <button className="btn-secondary" onClick={() => navigate(`/drama/${drama.id}`)}>
+            <button className="btn-secondary" onClick={() => navigate(`/drama/${drama?.id || id}`)}>
               Voltar aos Detalhes
             </button>
           </div>
@@ -390,14 +463,14 @@ export default function WatchPage({ catalog = [], user, isVip, addToHistory }) {
         <div className="watch-top-bar">
           <button
             className="watch-back-btn"
-            onClick={(e) => { e.stopPropagation(); navigate(`/drama/${drama.id}`); }}
+            onClick={(e) => { e.stopPropagation(); navigate(`/drama/${drama?.id || id}`); }}
             aria-label="Voltar para detalhes do dorama"
           >
             <ArrowLeft size={22} />
           </button>
 
           <div className="watch-title-block">
-            <h3>{drama.title}</h3>
+            <h3>{currentTitle}</h3>
             <span>Episódio {currentEpNum} · HD Dublado PT-BR</span>
           </div>
 
@@ -477,8 +550,8 @@ export default function WatchPage({ catalog = [], user, isVip, addToHistory }) {
               >
                 <List size={16} />
                 <span>
-                  <span className="mobile-only">{currentEpNum}/{episodes.length || drama.eps || 25}</span>
-                  <span className="desktop-only">Episódios ({currentEpNum}/{episodes.length || drama.eps || 25})</span>
+                  <span className="mobile-only">{currentEpNum}/{totalEpCount}</span>
+                  <span className="desktop-only">Episódios ({currentEpNum}/{totalEpCount})</span>
                 </span>
               </button>
 
@@ -526,8 +599,8 @@ export default function WatchPage({ catalog = [], user, isVip, addToHistory }) {
       <div className={`watch-episodes-sheet ${drawerOpen ? 'open' : ''}`}>
         <div className="sheet-header">
           <div>
-            <h4>Todos os Episódios ({episodes.length || drama.eps || 25})</h4>
-            <small>{drama.title}</small>
+            <h4>Todos os Episódios ({totalEpCount})</h4>
+            <small>{currentTitle}</small>
           </div>
           <button className="sheet-close-btn" onClick={() => setDrawerOpen(false)}>
             <X size={20} />
@@ -535,7 +608,7 @@ export default function WatchPage({ catalog = [], user, isVip, addToHistory }) {
         </div>
 
         <div className="sheet-episodes-grid">
-          {(episodes.length ? episodes : Array.from({ length: drama.eps || 25 }, (_, i) => ({
+          {(episodes.length ? episodes : Array.from({ length: totalEpCount }, (_, i) => ({
             episode: i + 1,
             isVipOnly: i >= 3,
             duration: 90

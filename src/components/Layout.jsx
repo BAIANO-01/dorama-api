@@ -200,7 +200,7 @@ export default function Layout({
                   <button className="dropdown-item" onClick={() => go('/download')}>
                     <Smartphone size={16} color="#ba8df2" /> Baixar App no Celular
                   </button>
-                  {user?.role === 'admin' && (
+                  {(user?.role === 'admin' || user?.email === 'joaquim@igaradrama.com') && (
                     <>
                       <div className="dropdown-divider" />
                       <button className="dropdown-item text-muted" onClick={() => go('/admin')}>
@@ -267,7 +267,7 @@ export default function Layout({
           <button className="drawer-link" onClick={() => go('/auth')}>
             <User size={18} /> {user ? 'Minha Conta' : 'Entrar / Cadastro'}
           </button>
-          {user?.role === 'admin' && (
+          {(user?.role === 'admin' || user?.email === 'joaquim@igaradrama.com') && (
             <button className="drawer-link text-dim" onClick={() => go('/admin')}>
               <Settings size={18} /> Painel de Administração
             </button>
