@@ -47,6 +47,7 @@ export default function WatchPage({ catalog = [], catalogLoading = false, user, 
   const [error, setError] = useState('');
   const [isVipBlocked, setIsVipBlocked] = useState(false);
   const [nextDramaToast, setNextDramaToast] = useState(null);
+  const [completedDramaModal, setCompletedDramaModal] = useState(null);
   const [seekFeedback, setSeekFeedback] = useState(null);
 
   const endedTriggeredRef = useRef(false);
@@ -57,7 +58,27 @@ export default function WatchPage({ catalog = [], catalogLoading = false, user, 
   useEffect(() => {
     endedTriggeredRef.current = false;
     setNextDramaToast(null);
+    setCompletedDramaModal(null);
   }, [id, ep]);
+
+  // Countdown timer for completion modal
+  useEffect(() => {
+    if (!completedDramaModal || completedDramaModal.countdown <= 0) return;
+    const interval = setInterval(() => {
+      setCompletedDramaModal(prev => {
+        if (!prev) return null;
+        if (prev.countdown <= 1) {
+          clearInterval(interval);
+          if (prev.nextDrama) {
+            navigate(`/watch/${prev.nextDrama.id}/1`);
+          }
+          return null;
+        }
+        return { ...prev, countdown: prev.countdown - 1 };
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [completedDramaModal, navigate]);
 
   // Track history
   useEffect(() => {
@@ -133,14 +154,14 @@ export default function WatchPage({ catalog = [], catalogLoading = false, user, 
       if (currentIdx >= 0 && catalog.length > 1) {
         const nextDrama = catalog[(currentIdx + 1) % catalog.length];
         if (nextDrama) {
-          setNextDramaToast(nextDrama.title);
-          setTimeout(() => {
-            navigate(`/watch/${nextDrama.id}/1`);
-          }, 1400);
+          setCompletedDramaModal({
+            nextDrama,
+            countdown: 10
+          });
         }
       }
     }
-  }, [hasNext, goToEpisode, currentEpNum, catalog, drama?.id, id, navigate]);
+  }, [hasNext, goToEpisode, currentEpNum, catalog, drama?.id, id]);
 
   // Auto-hide controls after 3.8 seconds of inactivity
   const resetControlsTimer = useCallback(() => {
@@ -662,7 +683,7 @@ export default function WatchPage({ catalog = [], catalogLoading = false, user, 
                 </span>
               </button>
 
-              <button className="watch-icon-btn" onClick={toggleMute} aria-label="Mudo">
+              <button className="watch-icon-btn watch-mute-btn" onClick={toggleMute} aria-label="Mudo">
                 {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
               </button>
 
@@ -674,30 +695,67 @@ export default function WatchPage({ catalog = [], catalogLoading = false, user, 
         </div>
       </div>
 
-      {/* ── AUTO NEXT DRAMA TOAST ── */}
-      {nextDramaToast && (
-        <div style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          background: 'rgba(20, 16, 28, 0.95)',
-          border: '1px solid rgba(186, 141, 242, 0.6)',
-          borderRadius: '16px',
-          padding: '20px 28px',
-          textAlign: 'center',
-          color: '#fff',
-          zIndex: 40,
-          boxShadow: '0 15px 40px rgba(0, 0, 0, 0.85)',
-          backdropFilter: 'blur(10px)',
-          animation: 'fade-in 0.3s ease'
-        }}>
-          <div style={{ color: '#4ade80', fontSize: '13px', fontWeight: 800, marginBottom: '6px' }}>
-            ✓ ÚLTIMO EPISÓDIO FINALIZADO!
+      {/* ── COMPLETION MODAL ON LAST EPISODE ── */}
+      {completedDramaModal && (
+        <div className="watch-series-completed-overlay">
+          <div className="watch-series-completed-card">
+            <div className="completed-icon">🎉</div>
+            <h3>Parabéns! Dorama Concluído!</h3>
+            <p className="completed-desc">
+              Você assistiu todos os <strong>{totalEpCount} episódios</strong> de <strong>{currentTitle}</strong>.
+            </p>
+
+            {completedDramaModal.nextDrama && (
+              <div className="completed-next-box">
+                <span className="next-label">Próximo Dorama Recomendado:</span>
+                <strong className="next-title">{completedDramaModal.nextDrama.title}</strong>
+                {completedDramaModal.countdown > 0 ? (
+                  <div className="countdown-bar">
+                    <span>Iniciando em {completedDramaModal.countdown}s...</span>
+                    <button 
+                      className="btn-cancel-countdown"
+                      onClick={() => setCompletedDramaModal(prev => prev ? { ...prev, countdown: 0 } : null)}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                ) : (
+                  <button 
+                    className="cta-huge-red" 
+                    style={{ marginTop: '10px', width: '100%' }}
+                    onClick={() => {
+                      const nextId = completedDramaModal.nextDrama.id;
+                      setCompletedDramaModal(null);
+                      navigate(`/watch/${nextId}/1`);
+                    }}
+                  >
+                    <Play size={18} fill="currentColor" /> Assistir Próximo Dorama
+                  </button>
+                )}
+              </div>
+            )}
+
+            <div className="completed-actions">
+              <button 
+                className="btn-secondary" 
+                onClick={() => {
+                  setCompletedDramaModal(null);
+                  goToEpisode(1);
+                }}
+              >
+                <RotateCcw size={16} /> Reassistir Episódio 1
+              </button>
+              <button 
+                className="btn-secondary" 
+                onClick={() => {
+                  setCompletedDramaModal(null);
+                  navigate('/');
+                }}
+              >
+                <Home size={16} /> Voltar ao Início
+              </button>
+            </div>
           </div>
-          <div style={{ fontSize: '16px', fontWeight: 800, marginBottom: '4px' }}>Iniciando Próximo Dorama:</div>
-          <div style={{ color: '#ba8df2', fontSize: '14px', fontWeight: 600 }}>{nextDramaToast}</div>
-          <div style={{ color: '#9ca3af', fontSize: '11px', marginTop: '10px' }}>Carregando Episódio 1...</div>
         </div>
       )}
 

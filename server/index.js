@@ -731,24 +731,35 @@ app.get('/api/episodes/:id', async (req, res) => {
         const story = payload.data?.categories?.[0]?.stories?.[0];
         const rawEps = Array.isArray(story?.episodes) ? story.episodes : [];
 
-        if (rawEps.length > 0) {
-          const episodes = rawEps.map((ep) => {
-            const epNum = Number(ep.episode_number) || 1;
-            const videoType = ep.video_type || (ep.video_url?.endsWith('.mp4') ? 'mp4' : 'm3u8');
+        if (rawEps.length > 0 || (drama && drama.eps)) {
+          const totalCount = Math.max(
+            Number(story?.total_episodes) || 0,
+            Number(drama?.eps) || 0,
+            rawEps.length || 0,
+            25
+          );
+
+          const availableMap = new Map();
+          rawEps.forEach((ep) => {
+            availableMap.set(Number(ep.episode_number), ep);
+          });
+
+          const episodes = Array.from({ length: totalCount }, (_, idx) => {
+            const epNum = idx + 1;
+            const ep = availableMap.get(epNum);
+            const videoType = ep?.video_type || (ep?.video_url?.endsWith('.mp4') ? 'mp4' : 'm3u8');
             return {
-              id: ep.episode_id || `${sourceStoryId}-${epNum}`,
+              id: ep?.episode_id || `${sourceStoryId}-${epNum}`,
               episode: epNum,
-              duration: Number(ep.duration) || 90,
-              cover: ep.thumbnail || drama.img,
+              duration: Number(ep?.duration) || 90,
+              cover: ep?.thumbnail || drama.img,
               video: {
-                url: ep.video_url,
+                url: ep?.video_url || '',
                 type: videoType
               },
               videoType,
-              streamUrl: ep.video_url 
-                ? `/api/stream/play?url=${encodeURIComponent(ep.video_url)}&storyId=${encodeURIComponent(sourceStoryId)}&provider=${encodeURIComponent(provider)}&ep=${epNum}&type=${videoType}`
-                : `/api/stream/play?storyId=${encodeURIComponent(sourceStoryId)}&provider=${encodeURIComponent(provider)}&ep=${epNum}&type=${videoType}`,
-              directVideoUrl: ep.video_url,
+              streamUrl: `/api/stream/play?storyId=${encodeURIComponent(sourceStoryId)}&provider=${encodeURIComponent(provider)}&ep=${epNum}&type=${videoType}`,
+              directVideoUrl: ep?.video_url || '',
               isVipOnly: epNum > 3
             };
           });
@@ -756,7 +767,7 @@ app.get('/api/episodes/:id', async (req, res) => {
           const result = {
             id: drama.id,
             name: drama.title,
-            totalEpisodes: story.total_episodes || episodes.length,
+            totalEpisodes: totalCount,
             cover: drama.img,
             licensed: true,
             provider,

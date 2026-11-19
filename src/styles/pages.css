@@ -1793,6 +1793,60 @@
   display: inline !important;
 }
 
+@media (max-width: 600px) {
+  .watch-bottom-bar {
+    padding: 10px 12px 18px !important;
+    padding-bottom: max(18px, env(safe-area-inset-bottom)) !important;
+  }
+  .watch-action-buttons-row {
+    gap: 4px !important;
+  }
+  .watch-left-controls,
+  .watch-right-controls {
+    gap: 4px !important;
+  }
+  .watch-icon-btn,
+  .watch-nav-btn {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+  }
+  .watch-drawer-toggle-btn {
+    padding: 5px 8px !important;
+    font-size: 11px !important;
+    gap: 3px !important;
+    flex-shrink: 0 !important;
+  }
+}
+
+@media (max-width: 440px) {
+  .watch-mute-btn {
+    display: none !important;
+  }
+  .watch-bottom-bar {
+    padding: 8px 10px 16px !important;
+    padding-bottom: max(16px, env(safe-area-inset-bottom)) !important;
+  }
+  .watch-action-buttons-row {
+    gap: 3px !important;
+  }
+  .watch-left-controls,
+  .watch-right-controls {
+    gap: 3px !important;
+  }
+  .watch-icon-btn,
+  .watch-nav-btn {
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+  }
+  .watch-drawer-toggle-btn {
+    padding: 4px 7px !important;
+    font-size: 10px !important;
+    gap: 3px !important;
+  }
+}
+
 @media (min-width: 768px) {
   .desktop-only {
     display: inline !important;
@@ -1820,6 +1874,120 @@
     padding: 8px 14px;
     font-size: 13px;
   }
+}
+
+/* Series Completed Modal Overlay */
+.watch-series-completed-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 6, 18, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: grid;
+  place-items: center;
+  z-index: 50;
+  padding: 20px;
+  animation: fade-in 0.3s ease;
+}
+
+.watch-series-completed-card {
+  background: rgba(26, 20, 36, 0.96);
+  border: 1px solid rgba(186, 141, 242, 0.4);
+  border-radius: 20px;
+  padding: 28px 24px;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85);
+}
+
+.completed-icon {
+  font-size: 42px;
+  margin-bottom: 12px;
+}
+
+.watch-series-completed-card h3 {
+  font-size: 20px;
+  font-weight: 800;
+  color: #fff;
+  margin: 0 0 8px 0;
+}
+
+.completed-desc {
+  font-size: 13px;
+  color: #c9b4bc;
+  line-height: 1.5;
+  margin: 0 0 18px 0;
+}
+
+.completed-next-box {
+  background: rgba(186, 141, 242, 0.1);
+  border: 1px solid rgba(186, 141, 242, 0.25);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 16px;
+  text-align: left;
+}
+
+.completed-next-box .next-label {
+  display: block;
+  font-size: 11px;
+  color: #ba8df2;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.completed-next-box .next-title {
+  display: block;
+  font-size: 14px;
+  color: #fff;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.countdown-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  color: #e5e7eb;
+}
+
+.btn-cancel-countdown {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #f87171;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+}
+
+.btn-cancel-countdown:hover {
+  background: rgba(239, 68, 68, 0.35);
+}
+
+.completed-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.completed-actions button {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 10px;
 }
 
 /* Episodes Bottom Sheet */
