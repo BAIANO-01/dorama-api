@@ -56,7 +56,7 @@ export default function HomePage({
     navigate('/explore');
   };
 
-  // Curated non-redundant sections
+  // Curated non-redundant sections (100% unique titles across all carousels)
   const curatedSections = useMemo(() => {
     if (!catalog.length) return [];
 
@@ -75,60 +75,68 @@ export default function HomePage({
       onViewAll: () => navigate('/trending'),
     });
 
-    // 2. GÊNEROS 100% DUBLADOS EM PORTUGUÊS
+    // 2. GÊNEROS DIVERSIFICADOS E EXCLUSIVOS (SEM REPETIÇÃO ENTRE FILEIRAS)
     const genreRows = [
       {
-        title: '🇧🇷 100% Dublados em Português (Brasil)',
-        subtitle: 'Séries completas com dublagem profissional e áudio em português brasileiro',
-        matches: d => d.isDubbedPt || d.tag === 'DUBLADO PT-BR' || (d.title && d.title.includes('Dublado')),
-        key: 'dublados-pt',
-        exploreKey: 'Dublado',
-      },
-      {
-        title: '👑 Bilionários, Máfia & Grandes Impérios',
-        subtitle: 'Don poderosos, casamentos por conveniência e amores secretos',
-        matches: d => (d.genre && (d.genre.includes('Bilionário') || d.genre.includes('Máfia') || d.genre.includes('CEO') || d.genre.includes('Identidade'))),
+        title: '👑 Bilionários & CEOs de Poder',
+        subtitle: 'Casamentos por conveniência, herdeiros bilionários e romances de elite',
+        matches: d => d.genre === 'Bilionários' || (d.genre && d.genre.includes('CEO')),
         key: 'bilionarios',
         exploreKey: 'Bilionários',
       },
       {
+        title: '🔫 Máfia & Poder das Sombras',
+        subtitle: 'Don poderosos, chefões da máfia e proteção perigosa',
+        matches: d => d.genre === 'Máfia',
+        key: 'mafia',
+        exploreKey: 'Máfia',
+      },
+      {
         title: '⚡ Vingança, Traição & Reviravoltas',
         subtitle: 'Humilhações cobradas com juros, divórcios e vinganças implacáveis',
-        matches: d => (d.genre && (d.genre.includes('Vingança') || d.genre.includes('Traição') || d.genre.includes('Divórcio') || d.genre.includes('Betrayal'))),
+        matches: d => d.genre === 'Vingança' || (d.title && d.title.includes('Vingan')) || (d.desc && d.desc.includes('vingan')),
         key: 'vinganca',
         exploreKey: 'Vingança',
       },
       {
         title: '❤️ Romances Proibidos & Paixão Ardente',
         subtitle: 'Olhares cruzados, reencontros inesperados e sentimentos incontroláveis',
-        matches: d => (d.genre && (d.genre.includes('Romance') || d.genre.includes('Paixão') || d.genre.includes('Forbidden'))),
+        matches: d => d.genre === 'Romance' || (d.desc && d.desc.includes('amor')),
         key: 'romance',
         exploreKey: 'Romance',
       },
       {
-        title: '👨‍👩‍👧 Família, Bebês & Segredos Revelados',
+        title: '👨‍👩‍👧 Família, Bebês & Herdeiros Secretos',
         subtitle: 'Crianças herdeiras, mães guerreiras e laços inquebráveis',
-        matches: d => (d.genre && (d.genre.includes('Família') || d.genre.includes('Bebê') || d.genre.includes('Herdeir'))),
+        matches: d => d.genre === 'Família' || (d.desc && d.desc.includes('filho')),
         key: 'familia',
         exploreKey: 'Família',
       },
       {
-        title: '🍿 Mais Assistidos da Semana no Brasil',
-        subtitle: 'As histórias que estão conquistando o público brasileiro',
+        title: '🌟 Lançamentos Recentes no Brasil',
+        subtitle: 'Novos doramas dublados adicionados diretamente do catálogo oficial',
         matches: () => true,
-        key: 'populares-br',
+        key: 'lancamentos-br',
+        exploreKey: 'Todos',
+      },
+      {
+        title: '💎 Sucessos Aclamados (Nota 9.7+)',
+        subtitle: 'As produções mais bem avaliadas e recomendadas pelo público',
+        matches: d => Number(d.rating) >= 9.7,
+        key: 'aclamados-br',
         exploreKey: 'Todos',
       },
     ];
 
     for (const row of genreRows) {
-      const matchingItems = catalog.filter(row.matches);
+      const matchingItems = catalog.filter(d => !usedIds.has(d.id) && row.matches(d)).slice(0, 16);
       if (matchingItems.length >= 2) {
+        matchingItems.forEach(d => usedIds.add(d.id));
         result.push({
           key: row.key,
           title: row.title,
           subtitle: row.subtitle,
-          items: matchingItems.slice(0, 16),
+          items: matchingItems,
           showRank: false,
           onViewAll: () => goCategory(row.exploreKey),
         });

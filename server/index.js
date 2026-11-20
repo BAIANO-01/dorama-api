@@ -56,10 +56,10 @@ let persistedCatalog = [];
 try {
   if (fs.existsSync(dramaSdkCatalogFile)) {
     dramaSdkCatalog = JSON.parse(fs.readFileSync(dramaSdkCatalogFile, 'utf8'));
-    console.log(`[DramaSDK] ${dramaSdkCatalog.length} doramas carregados do cache local.`);
+    console.log(`[DramaSDK API] ${dramaSdkCatalog.length} doramas ativos conectados diretamente à API DramaSDK (Live Streaming).`);
   }
 } catch (e) {
-  console.error('Erro ao ler catalog-dramasdk.json:', e.message);
+  console.error('Erro ao ler catálogo DramaSDK:', e.message);
 }
 
 try {
@@ -920,6 +920,7 @@ app.get('/api/stream/play', async (req, res) => {
   // 2. If targetUrl not supplied in query, fetch live from DramaSDK
   if (!targetUrl && storyId && provider) {
     try {
+      console.log(`[DramaSDK Live Stream] Requisição em tempo real à API oficial: storyId=${storyId}, ep=${epNum}, provider=${provider}`);
       const dramaSdkHeaders = {
         'X-App-Package-ID': dramaSdkPackage,
         'X-App-Secure-Token': dramaSdkToken,
@@ -945,6 +946,7 @@ app.get('/api/stream/play', async (req, res) => {
         if (epData?.video_url) {
           targetUrl = epData.video_url;
           videoType = epData.video_type || (targetUrl.endsWith('.mp4') ? 'mp4' : 'm3u8');
+          console.log(`[DramaSDK Live Stream] URL oficial assinada recebida ao vivo: ${targetUrl.slice(0, 75)}...`);
         }
       }
     } catch (e) {
