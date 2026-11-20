@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Home, Play, Pause, SkipBack, SkipForward, RotateCcw, RotateCw,
-  List, Crown, Volume2, VolumeX, Maximize, X, ShieldCheck
+  List, Crown, Volume2, VolumeX, Maximize, X, ShieldCheck, ShieldAlert
 } from 'lucide-react';
 import Hls from 'hls.js';
 import { fetchEpisodes } from '../services/api';
@@ -46,6 +46,7 @@ export default function WatchPage({ catalog = [], catalogLoading = false, user, 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [error, setError] = useState('');
   const [isVipBlocked, setIsVipBlocked] = useState(false);
+  const [isLockedByProvider, setIsLockedByProvider] = useState(false);
   const [nextDramaToast, setNextDramaToast] = useState(null);
   const [completedDramaModal, setCompletedDramaModal] = useState(null);
   const [seekFeedback, setSeekFeedback] = useState(null);
@@ -59,6 +60,7 @@ export default function WatchPage({ catalog = [], catalogLoading = false, user, 
     endedTriggeredRef.current = false;
     setNextDramaToast(null);
     setCompletedDramaModal(null);
+    setIsLockedByProvider(false);
   }, [id, ep]);
 
   // Countdown timer for completion modal
@@ -292,7 +294,15 @@ export default function WatchPage({ catalog = [], catalogLoading = false, user, 
       });
 
       hls.on(Hls.Events.ERROR, (_event, data) => {
-        if (data.response?.code === 403) {
+        if (data.response?.code === 403 || data.response?.code === 423) {
+          try {
+            const body = JSON.parse(data.response.text);
+            if (body.code === 'EPISODE_LOCKED') {
+              setIsLockedByProvider(true);
+              setLoadingVideo(false);
+              return;
+            }
+          } catch (_) {}
           setIsVipBlocked(true);
           setError('Conteúdo exclusivo para assinantes VIP.');
           setLoadingVideo(false);
@@ -539,6 +549,25 @@ export default function WatchPage({ catalog = [], catalogLoading = false, user, 
             </button>
             <button className="btn-secondary" onClick={() => navigate(`/drama/${drama?.id || id}`)}>
               Voltar aos Detalhes
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── EPISODE LOCKED BY UPSTREAM PROVIDER SCREEN ── */}
+      {isLockedByProvider && (
+        <div className="watch-vip-screen" style={{ background: 'rgba(15, 10, 24, 0.95)' }}>
+          <ShieldAlert size={52} color="#f59e0b" />
+          <h2 style={{ color: '#f59e0b', marginTop: '12px' }}>Episódio Bloqueado no Provedor</h2>
+          <p style={{ maxWidth: '480px', margin: '0 auto 16px', lineHeight: 1.6, color: '#e5e7eb' }}>
+            A API do provedor <strong>FlickReels</strong> na DramaSDK disponibiliza os episódios 1 a 8 na modalidade de avaliação. Os episódios 9 em diante requerem ativação de acesso ao provedor no painel da sua conta <strong>DramaSDK</strong> (entitled provider access).
+          </p>
+          <div className="watch-vip-actions">
+            <button className="btn-primary" onClick={() => goToEpisode(1)}>
+              <RotateCcw size={18} /> Voltar ao Episódio 1
+            </button>
+            <button className="btn-secondary" onClick={() => navigate('/')}>
+              <Home size={18} /> Escolher Outro Dorama
             </button>
           </div>
         </div>

@@ -947,6 +947,25 @@ app.get('/api/stream/play', async (req, res) => {
           targetUrl = epData.video_url;
           videoType = epData.video_type || (targetUrl.endsWith('.mp4') ? 'mp4' : 'm3u8');
           console.log(`[DramaSDK Live Stream] URL oficial assinada recebida ao vivo: ${targetUrl.slice(0, 75)}...`);
+        } else if (streamData.code === 'EPISODE_LOCKED' || streamData.error) {
+          console.warn(`[DramaSDK Live Stream] Episódio ${epNum} bloqueado na API DramaSDK:`, streamData.error || streamData.code);
+          return res.status(403).json({
+            error: 'Este episódio requer acesso habilitado do provedor na API DramaSDK (código: EPISODE_LOCKED).',
+            code: 'EPISODE_LOCKED',
+            provider,
+            episode: epNum
+          });
+        }
+      } else {
+        const errJson = await streamRes.json().catch(() => ({}));
+        if (errJson.code === 'EPISODE_LOCKED' || errJson.error) {
+          console.warn(`[DramaSDK Live Stream] Episódio ${epNum} bloqueado na API DramaSDK:`, errJson.error || errJson.code);
+          return res.status(403).json({
+            error: errJson.error || 'Este episódio requer acesso habilitado do provedor na API DramaSDK (código: EPISODE_LOCKED).',
+            code: errJson.code || 'EPISODE_LOCKED',
+            provider,
+            episode: epNum
+          });
         }
       }
     } catch (e) {
@@ -955,9 +974,11 @@ app.get('/api/stream/play', async (req, res) => {
   }
 
   if (!targetUrl) {
-    // Verified reliable live HLS stream
-    targetUrl = 'https://v-mps.crazymaplestudios.com/104bcb9fd83671f1a2f1e6e7c64b0102/video/893f2ed270704bd38985cc2cd8f3dd2e-38632476b0de7c8d75bff1df3712145a-video-sd.m3u8';
-    videoType = 'm3u8';
+    return res.status(404).json({
+      error: `Vídeo do episódio ${epNum} não disponível no provedor DramaSDK.`,
+      code: 'VIDEO_NOT_FOUND',
+      episode: epNum
+    });
   }
 
   // 3. Handle MP4 Video Streams (Support Byte-Range Seeking)
